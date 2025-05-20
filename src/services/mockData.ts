@@ -1,39 +1,61 @@
 
 import { Bus, Seat } from "@/types";
 
-// Mock bus data
+// Mock bus data for Cameroon
 export const buses: Bus[] = [
   {
     id: "bus-1",
-    name: "Express Line 1",
-    from: "New York",
-    to: "Boston",
+    name: "Garanti Express",
+    from: "Douala",
+    to: "Yaoundé",
     departureTime: "08:00 AM",
-    arrivalTime: "12:00 PM",
-    price: 45,
+    arrivalTime: "12:30 PM",
+    price: 5000,
     availableSeats: 30,
     totalSeats: 40
   },
   {
     id: "bus-2",
-    name: "City Shuttle",
-    from: "Los Angeles",
-    to: "San Francisco",
+    name: "Central Voyage",
+    from: "Yaoundé",
+    to: "Bamenda",
     departureTime: "09:30 AM",
-    arrivalTime: "03:45 PM",
-    price: 60,
+    arrivalTime: "04:00 PM",
+    price: 7500,
     availableSeats: 25,
     totalSeats: 40
   },
   {
     id: "bus-3",
-    name: "Night Rider",
-    from: "Chicago",
-    to: "Detroit",
-    departureTime: "10:00 PM",
-    arrivalTime: "03:00 AM",
-    price: 40,
+    name: "Touristique Express",
+    from: "Douala",
+    to: "Kribi",
+    departureTime: "10:00 AM",
+    arrivalTime: "01:30 PM",
+    price: 4000,
     availableSeats: 35,
+    totalSeats: 40
+  },
+  {
+    id: "bus-4",
+    name: "Buca Voyages",
+    from: "Buea",
+    to: "Limbe",
+    departureTime: "11:00 AM",
+    arrivalTime: "12:15 PM",
+    price: 2000,
+    availableSeats: 18,
+    totalSeats: 40
+  },
+  {
+    id: "bus-5",
+    name: "Nord Express",
+    from: "Yaoundé",
+    to: "Garoua",
+    departureTime: "07:30 PM",
+    arrivalTime: "06:00 AM",
+    price: 12000,
+    availableSeats: 22,
     totalSeats: 40
   }
 ];
