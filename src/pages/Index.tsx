@@ -7,21 +7,29 @@ import { buses } from "@/services/mockData";
 import BusList from "@/components/BusList";
 import SeatSelection from "@/components/SeatSelection";
 import SignInForm from "@/components/SignInForm";
+import SignUpForm from "@/components/SignUpForm";
+import ForgotPasswordForm from "@/components/ForgotPasswordForm";
 import { Bus } from "@/types";
 import { ArrowLeft, ArrowRight, Bus as BusIcon, Ticket } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { User } from "@/types";
+
+type AppState = "auth" | "signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
 
 const Index = () => {
   const { toast } = useToast();
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [step, setStep] = useState<"auth" | "buses" | "seats" | "payment" | "confirmation">("auth");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [step, setStep] = useState<AppState>("auth");
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
 
   // Calculate progress percentage based on step
   const getProgressPercentage = () => {
     switch(step) {
-      case "auth": return 25;
+      case "auth": 
+      case "signup": 
+      case "forgot-password": return 25;
       case "buses": return 50;
       case "seats": return 75;
       case "payment": 
@@ -33,6 +41,14 @@ const Index = () => {
   const handleSignIn = (email: string, password: string) => {
     // Mock authentication - in a real app, this would connect to your auth service
     if (email && password) {
+      // Mock user data - in a real app this would come from your auth system
+      const mockUser: User = {
+        id: "user-1",
+        name: "John Doe",
+        email: email
+      };
+      
+      setCurrentUser(mockUser);
       setIsSignedIn(true);
       setStep("buses");
       toast({
@@ -46,6 +62,32 @@ const Index = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleSignUp = (userData: { fullName: string; phone: string; email: string; password: string }) => {
+    // Mock user registration - in a real app, this would connect to your auth service
+    const mockUser: User = {
+      id: `user-${Date.now().toString(36)}`,
+      name: userData.fullName,
+      email: userData.email,
+      phone: userData.phone
+    };
+    
+    setCurrentUser(mockUser);
+    setIsSignedIn(true);
+    setStep("buses");
+    toast({
+      title: "Account created successfully",
+      description: "Welcome to CamBus Ticketing System!",
+    });
+  };
+
+  const handleResetPassword = (email: string) => {
+    // Mock password reset - in a real app, this would send an email
+    toast({
+      title: "Password reset email sent",
+      description: `Check your inbox at ${email} for instructions`,
+    });
   };
 
   const handleSelectBus = (bus: Bus) => {
@@ -81,6 +123,18 @@ const Index = () => {
     setStep("buses");
   };
 
+  const handleSignOut = () => {
+    setIsSignedIn(false);
+    setCurrentUser(null);
+    setSelectedBus(null);
+    setSelectedSeatIds([]);
+    setStep("auth");
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out",
+    });
+  };
+
   return (
     <div className="min-h-screen p-4 bg-hero-pattern">
       <div className="max-w-4xl mx-auto py-6">
@@ -91,7 +145,7 @@ const Index = () => {
           </h1>
         </div>
 
-        {isSignedIn && step !== "auth" && (
+        {isSignedIn && !["auth", "signup", "forgot-password"].includes(step) && (
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-2">
               <div className="flex items-center gap-1">
@@ -123,6 +177,8 @@ const Index = () => {
           <CardHeader className={step === "confirmation" ? "text-center" : ""}>
             <CardTitle className="text-2xl font-bold">
               {step === "auth" && "CamBus Ticketing System"}
+              {step === "signup" && "Create Account"}
+              {step === "forgot-password" && "Reset Password"}
               {step === "buses" && "Select Your Route"}
               {step === "seats" && "Choose Your Seats"}
               {step === "payment" && "Payment Details"}
@@ -130,6 +186,8 @@ const Index = () => {
             </CardTitle>
             <CardDescription>
               {step === "auth" && "Sign in to book your bus tickets easily"}
+              {step === "signup" && "Register to access our bus ticketing services"}
+              {step === "forgot-password" && "Recover access to your account"}
               {step === "buses" && "Browse available buses and routes"}
               {step === "seats" && "Select your preferred seats"}
               {step === "payment" && "Complete your payment to confirm booking"}
@@ -139,7 +197,25 @@ const Index = () => {
           
           <CardContent>
             {step === "auth" && !isSignedIn && (
-              <SignInForm onSignIn={handleSignIn} />
+              <SignInForm 
+                onSignIn={handleSignIn} 
+                onCreateAccount={() => setStep("signup")}
+                onForgotPassword={() => setStep("forgot-password")}
+              />
+            )}
+            
+            {step === "signup" && (
+              <SignUpForm 
+                onSignUp={handleSignUp}
+                onBack={() => setStep("auth")}
+              />
+            )}
+            
+            {step === "forgot-password" && (
+              <ForgotPasswordForm 
+                onResetPassword={handleResetPassword}
+                onBack={() => setStep("auth")}
+              />
             )}
             
             {step === "buses" && (
@@ -278,16 +354,11 @@ const Index = () => {
             )}
           </CardContent>
           
-          {isSignedIn && step !== "auth" && step !== "confirmation" && (
+          {isSignedIn && !["auth", "signup", "forgot-password", "confirmation"].includes(step) && (
             <CardFooter>
               <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsSignedIn(false);
-                  setSelectedBus(null);
-                  setSelectedSeatIds([]);
-                  setStep("auth");
-                }}
+                variant="outline"
+                onClick={handleSignOut}
                 className="w-full"
               >
                 Sign Out

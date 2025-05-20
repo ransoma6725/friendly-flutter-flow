@@ -7,9 +7,11 @@ import { User } from "lucide-react";
 
 interface SignInFormProps {
   onSignIn: (email: string, password: string) => void;
+  onCreateAccount: () => void;
+  onForgotPassword: () => void;
 }
 
-const SignInForm = ({ onSignIn }: SignInFormProps) => {
+const SignInForm = ({ onSignIn, onCreateAccount, onForgotPassword }: SignInFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -45,7 +47,11 @@ const SignInForm = ({ onSignIn }: SignInFormProps) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <button type="button" className="text-xs text-primary hover:underline">
+            <button 
+              type="button" 
+              onClick={onForgotPassword}
+              className="text-xs text-primary hover:underline"
+            >
               Forgot password?
             </button>
           </div>
@@ -66,7 +72,11 @@ const SignInForm = ({ onSignIn }: SignInFormProps) => {
         
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Don't have an account?</span>{" "}
-          <button type="button" className="text-primary hover:underline font-medium">
+          <button 
+            type="button" 
+            onClick={onCreateAccount}
+            className="text-primary hover:underline font-medium"
+          >
             Create Account
           </button>
         </div>
