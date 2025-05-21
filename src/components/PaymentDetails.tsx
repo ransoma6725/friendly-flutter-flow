@@ -1,7 +1,9 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CopyIcon, CheckIcon } from "lucide-react";
 import { Bus } from "@/types";
+import { useState } from "react";
+import { toast } from "@/components/ui/toast-utils";
 
 interface PaymentDetailsProps {
   bus: Bus;
@@ -11,6 +13,25 @@ interface PaymentDetailsProps {
 }
 
 const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDetailsProps) => {
+  const [paymentMethod, setPaymentMethod] = useState<"mtn" | "orange">("mtn");
+  const [copied, setCopied] = useState<string | null>(null);
+  
+  const mtnNumber = "673371017";
+  const orangeNumber = "659942442";
+  
+  const handleCopyNumber = (number: string, type: string) => {
+    navigator.clipboard.writeText(number);
+    setCopied(type);
+    toast({
+      title: "Number copied!",
+      description: `${type} number copied to clipboard.`,
+    });
+    
+    setTimeout(() => {
+      setCopied(null);
+    }, 2000);
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-lg p-4">
@@ -53,24 +74,68 @@ const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDeta
         
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 hover:border-primary transition-colors">
-              <input type="radio" name="paymentMethod" defaultChecked className="mr-2" />
+            <label className={`flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors ${paymentMethod === "mtn" ? "border-primary bg-primary/5" : ""}`}>
+              <input 
+                type="radio" 
+                name="paymentMethod" 
+                checked={paymentMethod === "mtn"} 
+                onChange={() => setPaymentMethod("mtn")} 
+                className="mr-2" 
+              />
               <span>MTN Mobile Money</span>
             </label>
           </div>
           <div className="flex-1">
-            <label className="flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 hover:border-primary transition-colors">
-              <input type="radio" name="paymentMethod" className="mr-2" />
+            <label className={`flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors ${paymentMethod === "orange" ? "border-primary bg-primary/5" : ""}`}>
+              <input 
+                type="radio" 
+                name="paymentMethod" 
+                checked={paymentMethod === "orange"} 
+                onChange={() => setPaymentMethod("orange")} 
+                className="mr-2" 
+              />
               <span>Orange Money</span>
             </label>
           </div>
+        </div>
+        
+        <div className="p-4 border rounded-md bg-muted/30">
+          <h4 className="font-medium mb-2">
+            {paymentMethod === "mtn" ? "MTN MoMo Payment Instructions" : "Orange Money Payment Instructions"}
+          </h4>
+          
+          <ol className="list-decimal list-inside space-y-2 text-sm">
+            <li>Dial *126# on your phone</li>
+            <li>Select "Send Money"</li>
+            <li>Enter the number: 
+              <span className="ml-1 font-medium">
+                {paymentMethod === "mtn" ? mtnNumber : orangeNumber}
+                <button 
+                  onClick={() => handleCopyNumber(
+                    paymentMethod === "mtn" ? mtnNumber : orangeNumber,
+                    paymentMethod === "mtn" ? "MTN" : "Orange"
+                  )}
+                  className="ml-2 inline-flex items-center text-primary hover:text-primary/80"
+                >
+                  {copied === (paymentMethod === "mtn" ? "MTN" : "Orange") ? (
+                    <CheckIcon className="h-4 w-4" />
+                  ) : (
+                    <CopyIcon className="h-4 w-4" />
+                  )}
+                </button>
+              </span>
+            </li>
+            <li>Enter amount: {(selectedSeatIds.length * bus.price).toLocaleString()} XAF</li>
+            <li>Enter your PIN to confirm</li>
+            <li>Click "Complete Payment" below once done</li>
+          </ol>
         </div>
         
         <Button 
           onClick={onPayment} 
           className="w-full"
         >
-          Pay {(selectedSeatIds.length * bus.price).toLocaleString()} XAF
+          Complete Payment
         </Button>
         
         <Button

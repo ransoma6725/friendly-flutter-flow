@@ -1,11 +1,12 @@
 
-import { Bus, Route, Package, Clock, User, Calendar, MapPin } from "lucide-react";
+import { Bus, Route, Package, Clock, User, Calendar, MapPin, Ticket, Users, CreditCard } from "lucide-react";
 
 export const adminSidebarItems = [
   {
     label: "Management",
     items: [
       { title: "Dashboard", path: "/admin", icon: User },
+      { title: "Bookings", path: "/admin/bookings", icon: Ticket },
       { title: "Buses", path: "/admin/buses", icon: Bus },
       { title: "Routes", path: "/admin/routes", icon: Route },
       { title: "Packages", path: "/admin/packages", icon: Package },

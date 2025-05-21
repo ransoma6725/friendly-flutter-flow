@@ -2,19 +2,21 @@
 import { Button } from "@/components/ui/button";
 import { Bus } from "@/types";
 import { useNavigate } from "react-router-dom"; 
-import { Check, Calendar, Home, User } from "lucide-react";
+import { Check, Calendar, Home, User, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface BookingConfirmationProps {
   bus: Bus;
   selectedSeatIds: string[];
   onNewBooking: () => void;
+  bookingId?: string;
 }
 
-const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking }: BookingConfirmationProps) => {
+const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking, bookingId = "" }: BookingConfirmationProps) => {
   const navigate = useNavigate();
   
-  // Generate a random booking reference
-  const bookingReference = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
+  // Generate a random booking reference if not provided
+  const bookingReference = bookingId || `BK-${Math.floor(10000 + Math.random() * 90000)}`;
   // Use the current date for the booking date
   const bookingDate = new Date().toISOString().split('T')[0];
   
@@ -24,11 +26,19 @@ const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking }: BookingConf
         <div className="rounded-full bg-green-100 p-3 mb-4">
           <Check className="h-8 w-8 text-green-600" />
         </div>
-        <h3 className="text-2xl font-semibold">Booking Confirmed!</h3>
+        <h3 className="text-2xl font-semibold">Booking Recorded!</h3>
         <p className="text-muted-foreground mt-2 max-w-md">
-          Your ticket has been booked successfully. We've sent the details to your email.
+          Your booking has been recorded. Your ticket will be available for download once payment is confirmed by our team.
         </p>
       </div>
+      
+      <Alert className="bg-amber-50 border-amber-200">
+        <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <AlertTitle className="text-amber-800">Payment Confirmation Pending</AlertTitle>
+        <AlertDescription className="text-amber-700">
+          Your payment is being verified. Once confirmed, you will be able to download your ticket from your booking history.
+        </AlertDescription>
+      </Alert>
       
       <div className="bg-muted/50 border rounded-lg p-6 max-w-md mx-auto text-left">
         <div className="mb-4 pb-4 border-b">
@@ -77,10 +87,10 @@ const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking }: BookingConf
         <Button 
           variant="default" 
           className="flex items-center gap-2"
-          onClick={() => navigate("/user")}
+          onClick={() => navigate("/user/bookings")}
         >
           <User className="h-4 w-4" />
-          Go to Dashboard
+          View My Bookings
         </Button>
         
         <Button 

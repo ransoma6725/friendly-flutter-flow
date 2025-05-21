@@ -3,17 +3,20 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Bus, User } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { useBookings } from "@/contexts/BookingContext";
 
 export type AppState = "auth" | "signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
 
 export const useBookingFlow = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { addBooking } = useBookings();
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [step, setStep] = useState<AppState>("auth");
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
   // Calculate progress percentage based on step
   const getProgressPercentage = () => {
@@ -100,10 +103,25 @@ export const useBookingFlow = () => {
   };
 
   const handlePayment = () => {
+    // Add the booking to our context
+    if (currentUser && selectedBus) {
+      const bookingId = addBooking({
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        bus: selectedBus,
+        seatIds: selectedSeatIds,
+        totalAmount: selectedBus.price * selectedSeatIds.length,
+        departureDate: new Date().toISOString(), // In a real app, this would be the actual departure date
+      });
+      
+      setCurrentBookingId(bookingId);
+    }
+  
     setStep("confirmation");
     toast({
-      title: "Payment successful",
-      description: "Your booking has been confirmed!",
+      title: "Payment initiated",
+      description: "Your booking has been recorded! Awaiting payment confirmation.",
     });
   };
 
@@ -136,6 +154,7 @@ export const useBookingFlow = () => {
     currentUser,
     step,
     selectedSeatIds,
+    currentBookingId,
     getProgressPercentage,
     handleSignIn,
     handleSignUp,
