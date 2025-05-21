@@ -40,7 +40,7 @@ const DashboardLayout = ({ children, sidebarItems, userName, userRole }: Dashboa
   const navigate = useNavigate();
 
   return (
-    <SidebarProvider collapsedWidth={56}>
+    <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col">
         {/* Mobile navigation */}
         <Sheet>
@@ -112,7 +112,7 @@ const DesktopSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['
   const navigate = useNavigate();
   
   return (
-    <Sidebar className="hidden md:flex transition-all duration-300 border-r" collapsible>
+    <Sidebar className="hidden md:flex transition-all duration-300 border-r">
       <div className="px-3 py-2">
         <h1 className="text-xl font-bold px-3 py-2">
           Cam<span className="text-primary">Bus</span>
@@ -121,7 +121,7 @@ const DesktopSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['
       
       <SidebarContent>
         {sidebarItems.map((group, index) => (
-          <SidebarGroup key={index} defaultOpen>
+          <SidebarGroup key={index}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             
             <SidebarGroupContent>
