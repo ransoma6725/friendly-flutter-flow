@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Bus, User } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 export type AppState = "auth" | "signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
 
 export const useBookingFlow = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -112,6 +114,10 @@ export const useBookingFlow = () => {
     setStep("buses");
   };
 
+  const handleGoToDashboard = () => {
+    navigate("/user");
+  };
+
   const handleSignOut = () => {
     setIsSignedIn(false);
     setCurrentUser(null);
@@ -139,6 +145,7 @@ export const useBookingFlow = () => {
     handlePayment,
     handleNewBooking,
     handleSignOut,
+    handleGoToDashboard,
     setStep
   };
 };

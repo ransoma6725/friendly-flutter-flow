@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Ticket } from "lucide-react";
 import { Bus } from "@/types";
+import { useNavigate } from "react-router-dom"; 
+import { Check, Calendar, Home, User } from "lucide-react";
 
 interface BookingConfirmationProps {
   bus: Bus;
@@ -10,53 +11,96 @@ interface BookingConfirmationProps {
 }
 
 const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking }: BookingConfirmationProps) => {
+  const navigate = useNavigate();
+  
+  // Generate a random booking reference
+  const bookingReference = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
+  // Use the current date for the booking date
+  const bookingDate = new Date().toISOString().split('T')[0];
+  
   return (
-    <div className="flex flex-col items-center justify-center py-6">
-      <div className="bg-primary/10 p-4 rounded-full mb-4">
-        <Ticket className="h-12 w-12 text-primary" />
+    <div className="space-y-6 text-center">
+      <div className="flex flex-col items-center justify-center">
+        <div className="rounded-full bg-green-100 p-3 mb-4">
+          <Check className="h-8 w-8 text-green-600" />
+        </div>
+        <h3 className="text-2xl font-semibold">Booking Confirmed!</h3>
+        <p className="text-muted-foreground mt-2 max-w-md">
+          Your ticket has been booked successfully. We've sent the details to your email.
+        </p>
       </div>
       
-      <h3 className="text-xl font-semibold mb-2">Ticket Confirmed!</h3>
-      <p className="text-muted-foreground mb-6 text-center max-w-sm">
-        Your booking has been confirmed. You will receive your ticket details via email shortly.
-      </p>
-      
-      <div className="bg-card border border-border rounded-lg p-6 w-full max-w-sm mb-6">
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Booking ID:</span>
-            <span className="font-medium">CB{Math.floor(Math.random() * 10000)}</span>
+      <div className="bg-muted/50 border rounded-lg p-6 max-w-md mx-auto text-left">
+        <div className="mb-4 pb-4 border-b">
+          <div className="text-xs text-muted-foreground">Booking Reference</div>
+          <div className="text-xl font-bold text-primary">{bookingReference}</div>
+          <div className="text-xs text-muted-foreground mt-2">Booking Date: {bookingDate}</div>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground">Route</div>
+              <div className="font-medium">{bus.from} → {bus.to}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-muted-foreground">Bus</div>
+              <div className="font-medium">{bus.name}</div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Bus:</span>
-            <span className="font-medium">{bus.name}</span>
+          
+          <div className="flex items-start justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground">Departure</div>
+              <div className="font-medium">{bus.departureTime}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-muted-foreground">Arrival</div>
+              <div className="font-medium">{bus.arrivalTime}</div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Route:</span>
-            <span className="font-medium">{bus.from} → {bus.to}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Date:</span>
-            <span className="font-medium">{new Date().toLocaleDateString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Departure:</span>
-            <span className="font-medium">{bus.departureTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Seats:</span>
-            <span className="font-medium">{selectedSeatIds.length}</span>
-          </div>
-          <div className="flex justify-between border-t pt-2 mt-2 font-bold">
-            <span>Total Paid:</span>
-            <span>{(selectedSeatIds.length * bus.price).toLocaleString()} XAF</span>
+          
+          <div className="flex items-start justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground">Seat(s)</div>
+              <div className="font-medium">{selectedSeatIds.join(", ")}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-muted-foreground">Total Price</div>
+              <div className="font-bold">{(selectedSeatIds.length * bus.price).toLocaleString()} XAF</div>
+            </div>
           </div>
         </div>
       </div>
       
-      <Button onClick={onNewBooking} className="gap-1">
-        Book Another Trip <ArrowRight className="h-4 w-4" />
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+        <Button 
+          variant="default" 
+          className="flex items-center gap-2"
+          onClick={() => navigate("/user")}
+        >
+          <User className="h-4 w-4" />
+          Go to Dashboard
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={onNewBooking}
+        >
+          <Calendar className="h-4 w-4" />
+          Book Another Trip
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className="flex items-center gap-2"
+          onClick={() => navigate("/")}
+        >
+          <Home className="h-4 w-4" />
+          Return to Home
+        </Button>
+      </div>
     </div>
   );
 };

@@ -34,3 +34,39 @@ export interface User {
   email: string;
   phone?: string;
 }
+
+export interface Package {
+  id: string;
+  trackingId: string;
+  sender: string;
+  recipient: string;
+  origin: string;
+  destination: string;
+  weight: number;
+  status: "pending" | "in-transit" | "delivered";
+  date: string;
+}
+
+export interface Route {
+  id: string;
+  from: string;
+  to: string;
+  distance: number;
+  price: number;
+  status: "active" | "suspended";
+}
+
+export interface Schedule {
+  id: string;
+  busId: string;
+  busName: string;
+  routeId: string;
+  route: string;
+  departureTime: string;
+  arrivalTime: string;
+  driver: string;
+  status: "scheduled" | "departed" | "arrived" | "cancelled";
+  price: number;
+  availableSeats: number;
+  totalSeats: number;
+}

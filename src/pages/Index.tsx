@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { buses } from "@/services/mockData";
 import BusList from "@/components/BusList";
@@ -12,6 +12,7 @@ import { useBookingFlow } from "@/hooks/useBookingFlow";
 import BookingProgress from "@/components/BookingProgress";
 import PaymentDetails from "@/components/PaymentDetails";
 import BookingConfirmation from "@/components/BookingConfirmation";
+import AuthContainer from "@/components/AuthContainer";
 
 const Index = () => {
   const {
@@ -69,13 +70,8 @@ const Index = () => {
           <BookingProgress currentStep={step} progressPercentage={getProgressPercentage()} />
         )}
         
-        <Card className="shadow-lg border-t-4 border-t-primary">
-          <CardHeader className={step === "confirmation" ? "text-center" : ""}>
-            <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-          
-          <CardContent>
+        {["auth", "signup", "forgot-password"].includes(step) ? (
+          <AuthContainer title={title} description={description}>
             {step === "auth" && !isSignedIn && (
               <SignInForm 
                 onSignIn={handleSignIn} 
@@ -97,49 +93,57 @@ const Index = () => {
                 onBack={() => setStep("auth")}
               />
             )}
-            
-            {step === "buses" && (
-              <BusList buses={buses} onSelectBus={handleSelectBus} />
-            )}
-            
-            {step === "seats" && selectedBus && (
-              <SeatSelection 
-                bus={selectedBus} 
-                onBookSeats={handleBookSeats} 
-                onBack={() => setStep("buses")}
-              />
-            )}
-            
-            {step === "payment" && selectedBus && (
-              <PaymentDetails 
-                bus={selectedBus}
-                selectedSeatIds={selectedSeatIds}
-                onPayment={handlePayment}
-                onBack={() => setStep("seats")}
-              />
-            )}
-            
-            {step === "confirmation" && selectedBus && (
-              <BookingConfirmation
-                bus={selectedBus}
-                selectedSeatIds={selectedSeatIds}
-                onNewBooking={handleNewBooking}
-              />
-            )}
-          </CardContent>
-          
-          {isSignedIn && !["auth", "signup", "forgot-password", "confirmation"].includes(step) && (
-            <CardFooter>
-              <Button 
-                variant="outline"
-                onClick={handleSignOut}
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-            </CardFooter>
-          )}
-        </Card>
+          </AuthContainer>
+        ) : (
+          <Card className="shadow-lg border-t-4 border-t-primary">
+            <CardContent className={`p-6 ${step === "confirmation" ? "text-center" : ""}`}>
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="text-muted-foreground">{description}</p>
+              </div>
+              
+              {step === "buses" && (
+                <BusList buses={buses} onSelectBus={handleSelectBus} />
+              )}
+              
+              {step === "seats" && selectedBus && (
+                <SeatSelection 
+                  bus={selectedBus} 
+                  onBookSeats={handleBookSeats} 
+                  onBack={() => setStep("buses")}
+                />
+              )}
+              
+              {step === "payment" && selectedBus && (
+                <PaymentDetails 
+                  bus={selectedBus}
+                  selectedSeatIds={selectedSeatIds}
+                  onPayment={handlePayment}
+                  onBack={() => setStep("seats")}
+                />
+              )}
+              
+              {step === "confirmation" && selectedBus && (
+                <BookingConfirmation
+                  bus={selectedBus}
+                  selectedSeatIds={selectedSeatIds}
+                  onNewBooking={handleNewBooking}
+                />
+              )}
+              
+              {isSignedIn && !["confirmation"].includes(step) && (
+                <div className="mt-6 flex justify-end">
+                  <Button 
+                    variant="outline"
+                    onClick={handleSignOut}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
