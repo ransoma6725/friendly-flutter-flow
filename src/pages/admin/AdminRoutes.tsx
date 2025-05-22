@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import {
@@ -47,6 +46,14 @@ const initialRoutes: RouteData[] = [
   { id: "3", from: "Douala", to: "Limbe", distance: 65, price: 2000, status: "active" },
   { id: "4", from: "Douala", to: "Bafoussam", distance: 295, price: 6000, status: "suspended" },
   { id: "5", from: "Bamenda", to: "Buea", distance: 214, price: 5500, status: "active" },
+  // New routes
+  { id: "6", from: "Yaoundé", to: "Dschang", distance: 335, price: 7000, status: "active" },
+  { id: "7", from: "Douala", to: "Edea", distance: 60, price: 2000, status: "active" },
+  { id: "8", from: "Yaoundé", to: "Ngaoundere", distance: 610, price: 11000, status: "active" },
+  { id: "9", from: "Douala", to: "Nkongsamba", distance: 142, price: 3500, status: "active" },
+  { id: "10", from: "Bamenda", to: "Foumban", distance: 170, price: 4500, status: "active" },
+  { id: "11", from: "Yaoundé", to: "Foumbot", distance: 290, price: 6500, status: "active" },
+  { id: "12", from: "Bafoussam", to: "Yaoundé", distance: 295, price: 6000, status: "active" },
 ];
 
 const AdminRoutes = () => {
@@ -61,6 +68,12 @@ const AdminRoutes = () => {
     price: 0,
     status: "active"
   });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRoutes = routes.filter(route => 
+    route.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    route.to.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleSaveRoute = () => {
     if (!newRoute.from || !newRoute.to || !newRoute.distance || !newRoute.price) {
@@ -251,6 +264,8 @@ const AdminRoutes = () => {
             <Input 
               placeholder="Search routes..." 
               className="max-w-sm" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
@@ -266,7 +281,7 @@ const AdminRoutes = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {routes.map((route) => (
+              {filteredRoutes.map((route) => (
                 <TableRow key={route.id}>
                   <TableCell className="font-medium">{route.from}</TableCell>
                   <TableCell>{route.to}</TableCell>

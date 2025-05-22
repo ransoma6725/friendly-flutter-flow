@@ -7,12 +7,13 @@ import SeatSelection from "@/components/SeatSelection";
 import SignInForm from "@/components/SignInForm";
 import SignUpForm from "@/components/SignUpForm";
 import ForgotPasswordForm from "@/components/ForgotPasswordForm";
-import { BusIcon } from "lucide-react";
+import { BusIcon, Info } from "lucide-react";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
 import BookingProgress from "@/components/BookingProgress";
 import PaymentDetails from "@/components/PaymentDetails";
 import BookingConfirmation from "@/components/BookingConfirmation";
 import AuthContainer from "@/components/AuthContainer";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const {
@@ -59,11 +60,20 @@ const Index = () => {
   return (
     <div className="min-h-screen p-4 bg-hero-pattern">
       <div className="max-w-4xl mx-auto py-6">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <BusIcon className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl md:text-3xl font-bold text-center">
-            CamBus <span className="text-primary">Ticketing</span>
-          </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <BusIcon className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl md:text-3xl font-bold">
+              CamBus <span className="text-primary">Ticketing</span>
+            </h1>
+          </div>
+          
+          <Link to="/about">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Info className="h-4 w-4" />
+              About Us
+            </Button>
+          </Link>
         </div>
 
         {isSignedIn && !["auth", "signup", "forgot-password"].includes(step) && (

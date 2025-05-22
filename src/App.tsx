@@ -20,6 +20,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminRoute from "./components/AdminRoute";
 import { AdminProvider } from "./contexts/AdminContext";
 import { BookingProvider } from "./contexts/BookingContext";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/about" element={<AboutUs />} />
                 
                 {/* Admin Auth Route */}
                 <Route path="/admin/login" element={<AdminLogin />} />
