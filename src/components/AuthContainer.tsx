@@ -2,7 +2,7 @@
 import { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Shield } from "lucide-react";
+import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface AuthContainerProps {
@@ -29,16 +29,6 @@ const AuthContainer = ({ title, description, children }: AuthContainerProps) => 
           >
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">User Dashboard</span>
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1.5"
-            onClick={() => navigate("/admin/login")}
-          >
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Admin</span>
           </Button>
         </div>
       </CardHeader>

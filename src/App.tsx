@@ -18,6 +18,7 @@ import UserBookings from "./pages/user/UserBookings";
 import UserParcelTracking from "./pages/user/UserParcelTracking";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminRoute from "./components/AdminRoute";
+import UserRoute from "./components/UserRoute";
 import { AdminProvider } from "./contexts/AdminContext";
 import { BookingProvider } from "./contexts/BookingContext";
 import AboutUs from "./pages/AboutUs";
@@ -72,10 +73,22 @@ const App = () => (
                   </AdminRoute>
                 } />
                 
-                {/* User Routes */}
-                <Route path="/user" element={<UserDashboard />} />
-                <Route path="/user/bookings" element={<UserBookings />} />
-                <Route path="/user/tracking" element={<UserParcelTracking />} />
+                {/* Protected User Routes */}
+                <Route path="/user" element={
+                  <UserRoute>
+                    <UserDashboard />
+                  </UserRoute>
+                } />
+                <Route path="/user/bookings" element={
+                  <UserRoute>
+                    <UserBookings />
+                  </UserRoute>
+                } />
+                <Route path="/user/tracking" element={
+                  <UserRoute>
+                    <UserParcelTracking />
+                  </UserRoute>
+                } />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

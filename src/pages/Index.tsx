@@ -7,7 +7,7 @@ import SeatSelection from "@/components/SeatSelection";
 import SignInForm from "@/components/SignInForm";
 import SignUpForm from "@/components/SignUpForm";
 import ForgotPasswordForm from "@/components/ForgotPasswordForm";
-import { BusIcon, Info } from "lucide-react";
+import { BusIcon, Info, Shield } from "lucide-react";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
 import BookingProgress from "@/components/BookingProgress";
 import PaymentDetails from "@/components/PaymentDetails";
@@ -68,12 +68,24 @@ const Index = () => {
             </h1>
           </div>
           
-          <Link to="/about">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Info className="h-4 w-4" />
-              About Us
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/about">
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Info className="h-4 w-4" />
+                About Us
+              </Button>
+            </Link>
+            
+            {/* Only show Admin link for admin-specific access */}
+            {isSignedIn && (
+              <Link to="/admin/login">
+                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {isSignedIn && !["auth", "signup", "forgot-password"].includes(step) && (
