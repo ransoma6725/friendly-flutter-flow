@@ -1,6 +1,6 @@
 
 import { Progress } from "@/components/ui/progress";
-import { AppState } from "@/hooks/useBookingFlow";
+import { AppState } from "@/utils/stepHelpers";
 
 interface BookingProgressProps {
   currentStep: AppState;

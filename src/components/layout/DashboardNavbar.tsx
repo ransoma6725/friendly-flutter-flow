@@ -14,9 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface DashboardNavbarProps {
   children?: ReactNode;
+  userName?: string;
+  userRole?: string;
 }
 
-const DashboardNavbar = ({ children }: DashboardNavbarProps) => {
+const DashboardNavbar = ({ children, userName, userRole }: DashboardNavbarProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,6 +38,13 @@ const DashboardNavbar = ({ children }: DashboardNavbarProps) => {
         </div>
         
         <div className="ml-auto flex items-center gap-2">
+          {userName && (
+            <div className="hidden md:flex flex-col text-right text-sm">
+              <span className="font-medium">{userName}</span>
+              {userRole && <span className="text-muted-foreground text-xs">{userRole}</span>}
+            </div>
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 

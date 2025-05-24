@@ -9,16 +9,25 @@ interface BookingConfirmationProps {
   bus: Bus;
   selectedSeatIds: string[];
   onNewBooking: () => void;
+  onGoHome?: () => void;
   bookingId?: string;
 }
 
-const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking, bookingId = "" }: BookingConfirmationProps) => {
+const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking, onGoHome, bookingId = "" }: BookingConfirmationProps) => {
   const navigate = useNavigate();
   
   // Generate a random booking reference if not provided
   const bookingReference = bookingId || `BK-${Math.floor(10000 + Math.random() * 90000)}`;
   // Use the current date for the booking date
   const bookingDate = new Date().toISOString().split('T')[0];
+  
+  const handleGoHome = () => {
+    if (onGoHome) {
+      onGoHome();
+    } else {
+      navigate("/");
+    }
+  };
   
   return (
     <div className="space-y-6 text-center">
@@ -105,7 +114,7 @@ const BookingConfirmation = ({ bus, selectedSeatIds, onNewBooking, bookingId = "
         <Button 
           variant="ghost" 
           className="flex items-center gap-2"
-          onClick={() => navigate("/")}
+          onClick={handleGoHome}
         >
           <Home className="h-4 w-4" />
           Return to Home

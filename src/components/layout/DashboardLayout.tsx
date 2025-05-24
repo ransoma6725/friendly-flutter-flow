@@ -32,14 +32,16 @@ interface DashboardLayoutProps {
       icon: React.ElementType;
     }[];
   }[];
+  userName?: string;
+  userRole?: string;
 }
 
-const DashboardLayout = ({ children, sidebarItems }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, sidebarItems, userName, userRole }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col">
         <Sheet>
-          <DashboardNavbar>
+          <DashboardNavbar userName={userName} userRole={userRole}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="outline" size="icon">
                 <MenuIcon className="h-5 w-5" />
