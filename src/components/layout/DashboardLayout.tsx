@@ -32,17 +32,12 @@ interface DashboardLayoutProps {
       icon: React.ElementType;
     }[];
   }[];
-  userName?: string;
-  userRole?: string;
 }
 
-const DashboardLayout = ({ children, sidebarItems, userName, userRole }: DashboardLayoutProps) => {
-  const navigate = useNavigate();
-
+const DashboardLayout = ({ children, sidebarItems }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col">
-        {/* Mobile navigation */}
         <Sheet>
           <DashboardNavbar>
             <SheetTrigger asChild className="md:hidden">
@@ -59,10 +54,8 @@ const DashboardLayout = ({ children, sidebarItems, userName, userRole }: Dashboa
         </Sheet>
         
         <div className="flex flex-1 w-full">
-          {/* Desktop sidebar - hidden on mobile */}
           <DesktopSidebar sidebarItems={sidebarItems} />
           
-          {/* Main content */}
           <main className="flex-1 p-4 md:p-6 overflow-auto">
             {children}
           </main>
@@ -78,7 +71,7 @@ const MobileSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['s
   return (
     <div className="bg-background p-4 h-full flex flex-col">
       <div className="flex items-center justify-center mb-8">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl md:text-2xl font-bold">
           Cam<span className="text-primary">Bus</span>
         </h1>
       </div>
@@ -93,7 +86,7 @@ const MobileSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['s
                 <Button
                   key={item.path}
                   variant="ghost"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-sm"
                   onClick={() => navigate(item.path)}
                 >
                   <Icon className="mr-2 h-4 w-4" />
@@ -114,7 +107,7 @@ const DesktopSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['
   return (
     <Sidebar className="hidden md:flex transition-all duration-300 border-r">
       <div className="px-3 py-2">
-        <h1 className="text-xl font-bold px-3 py-2">
+        <h1 className="text-lg md:text-xl font-bold px-3 py-2">
           Cam<span className="text-primary">Bus</span>
         </h1>
       </div>
@@ -122,7 +115,7 @@ const DesktopSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['
       <SidebarContent>
         {sidebarItems.map((group, index) => (
           <SidebarGroup key={index}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs">{group.label}</SidebarGroupLabel>
             
             <SidebarGroupContent>
               <SidebarMenu>
@@ -132,10 +125,10 @@ const DesktopSidebar = ({ sidebarItems }: { sidebarItems: DashboardLayoutProps['
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton 
                         onClick={() => navigate(item.path)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm"
                       >
-                        <Icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

@@ -1,29 +1,26 @@
 
 import { Navigate, useLocation } from "react-router-dom";
-import { ReactNode, useEffect, useState } from "react";
-import { isUserLoggedIn } from "@/services/authService";
+import { ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface UserRouteProps {
   children: ReactNode;
 }
 
 const UserRoute = ({ children }: UserRouteProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { isSignedIn, isLoading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    // Check if user is logged in
-    const authStatus = isUserLoggedIn();
-    setIsAuthenticated(authStatus);
-  }, []);
-
-  // Show loading state while checking authentication
-  if (isAuthenticated === null) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
-  if (!isAuthenticated) {
-    // Redirect to login if not authenticated
+  if (!isSignedIn) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
