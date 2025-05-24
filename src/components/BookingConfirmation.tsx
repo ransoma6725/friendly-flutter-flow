@@ -9,7 +9,7 @@ interface BookingConfirmationProps {
   bus: Bus;
   selectedSeatIds: string[];
   onNewBooking: () => void;
-  onGoHome?: () => void;
+  onGoHome: () => void;
   bookingId?: string;
 }
 
