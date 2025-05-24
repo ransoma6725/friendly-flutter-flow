@@ -2,9 +2,10 @@
 import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import BookingProgress from "@/components/BookingProgress";
+import { AppState } from "@/utils/stepHelpers";
 
 interface BookingStepsProps {
-  step: string;
+  step: AppState;
   title: string;
   description: string;
   progressPercentage: number;
