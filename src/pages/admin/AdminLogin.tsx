@@ -6,11 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Bus } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { adminAuth, adminLogin } = useAdmin();
+  const { adminAuth } = useAdmin();
 
   // If already authenticated as admin, redirect to admin dashboard
   useEffect(() => {
@@ -19,31 +20,38 @@ const AdminLogin = () => {
     }
   }, [adminAuth.isAdmin, navigate]);
 
-  const handleAdminSignIn = (email: string, password: string) => {
-    // In a real app, verify admin credentials against Supabase or your backend
-    // This is a simplified mock authentication
-    if (email === "admin@cambus.com" && password === "adminpass") {
-      // Set admin authentication in localStorage and context
-      localStorage.setItem("cambus_admin_auth", JSON.stringify({
-        isAdmin: true,
-        adminEmail: email,
-        timestamp: new Date().getTime()
-      }));
-      
-      // Update admin context state
-      adminLogin(email);
-      
+  const handleAdminSignIn = async (email: string, password: string) => {
+    try {
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Check if user is in admin_users table
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('email')
+        .eq('email', email)
+        .single();
+
+      if (adminError || !adminUser) {
+        await supabase.auth.signOut();
+        throw new Error('Not authorized as admin');
+      }
+
       toast({
         title: "Admin login successful",
         description: "Welcome to the admin dashboard",
       });
       
-      // Redirect to admin dashboard
       navigate("/admin");
-    } else {
+    } catch (error: any) {
       toast({
         title: "Authentication failed",
-        description: "Invalid admin credentials",
+        description: error.message || "Invalid admin credentials",
         variant: "destructive",
       });
     }

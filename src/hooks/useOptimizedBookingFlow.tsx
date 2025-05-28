@@ -3,7 +3,8 @@ import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useBookings } from "@/contexts/BookingContext";
-import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { transformSupabaseUser } from "@/types/auth";
 import { Bus } from "@/types";
 import { AppState, getProgressPercentage } from "@/utils/stepHelpers";
 
@@ -11,15 +12,17 @@ export const useOptimizedBookingFlow = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { addBooking } = useBookings();
-  const { isSignedIn, currentUser, signIn, signUp, signOut } = useAuth();
+  const { user, isSignedIn, signIn, signUp, signOut } = useSupabaseAuth();
   
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
   const [step, setStep] = useState<AppState>(isSignedIn ? "buses" : "auth");
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
-  const handleSignIn = useCallback((email: string, password: string) => {
-    const success = signIn(email, password);
+  const currentUser = user ? transformSupabaseUser(user) : null;
+
+  const handleSignIn = useCallback(async (email: string, password: string) => {
+    const success = await signIn(email, password);
     
     if (success) {
       setStep("buses");
@@ -36,13 +39,22 @@ export const useOptimizedBookingFlow = () => {
     }
   }, [signIn, toast]);
 
-  const handleSignUp = useCallback((userData: { fullName: string; phone: string; email: string; password: string }) => {
-    signUp(userData);
-    setStep("buses");
-    toast({
-      title: "Account created successfully",
-      description: "Welcome to CamBus Ticketing System!",
-    });
+  const handleSignUp = useCallback(async (userData: { fullName: string; phone: string; email: string; password: string }) => {
+    const newUser = await signUp(userData);
+    
+    if (newUser) {
+      setStep("buses");
+      toast({
+        title: "Account created successfully",
+        description: "Welcome to CamBus Ticketing System!",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create account",
+        variant: "destructive",
+      });
+    }
   }, [signUp, toast]);
 
   const handleResetPassword = useCallback((email: string) => {
@@ -98,8 +110,8 @@ export const useOptimizedBookingFlow = () => {
     setStep("buses");
   }, []);
 
-  const handleSignOut = useCallback(() => {
-    signOut();
+  const handleSignOut = useCallback(async () => {
+    await signOut();
     setSelectedBus(null);
     setSelectedSeatIds([]);
     setStep("auth");

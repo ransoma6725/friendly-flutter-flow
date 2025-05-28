@@ -1,5 +1,6 @@
 
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminAuthState {
   isAdmin: boolean;
@@ -12,56 +13,80 @@ interface AdminContextType {
   adminLogout: () => void;
 }
 
-const initialState: AdminAuthState = {
-  isAdmin: false,
-  adminEmail: null,
-};
-
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-export function AdminProvider({ children }: { children: ReactNode }) {
-  const [adminAuth, setAdminAuth] = useState<AdminAuthState>(initialState);
+export const AdminProvider = ({ children }: { children: ReactNode }) => {
+  const [adminAuth, setAdminAuth] = useState<AdminAuthState>({
+    isAdmin: false,
+    adminEmail: null,
+  });
 
-  // Load admin auth state from localStorage on mount
   useEffect(() => {
-    const storedAuth = localStorage.getItem("cambus_admin_auth");
-    if (storedAuth) {
-      try {
-        const parsed = JSON.parse(storedAuth);
-        // Check if admin session is less than 24 hours old
-        const isValid = parsed.timestamp && 
-          (new Date().getTime() - parsed.timestamp) < 24 * 60 * 60 * 1000;
-          
-        if (isValid) {
+    // Check if user is authenticated and is admin
+    const checkAdminAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Check if user is in admin_users table
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('email')
+          .eq('email', session.user.email)
+          .single();
+        
+        if (adminUser) {
           setAdminAuth({
-            isAdmin: parsed.isAdmin || false,
-            adminEmail: parsed.adminEmail || null,
+            isAdmin: true,
+            adminEmail: session.user.email || null,
           });
-        } else {
-          // Clear expired admin session
-          localStorage.removeItem("cambus_admin_auth");
         }
-      } catch (e) {
-        console.error("Failed to parse admin auth from localStorage", e);
       }
-    }
+    };
+
+    checkAdminAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setAdminAuth({
+            isAdmin: false,
+            adminEmail: null,
+          });
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // Check if user is admin
+          const { data: adminUser } = await supabase
+            .from('admin_users')
+            .select('email')
+            .eq('email', session.user.email)
+            .single();
+          
+          if (adminUser) {
+            setAdminAuth({
+              isAdmin: true,
+              adminEmail: session.user.email || null,
+            });
+          }
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const adminLogin = (email: string) => {
-    const newState = {
+    setAdminAuth({
       isAdmin: true,
       adminEmail: email,
-    };
-    setAdminAuth(newState);
-    localStorage.setItem("cambus_admin_auth", JSON.stringify({
-      ...newState,
-      timestamp: new Date().getTime()
-    }));
+    });
   };
 
-  const adminLogout = () => {
-    setAdminAuth(initialState);
-    localStorage.removeItem("cambus_admin_auth");
+  const adminLogout = async () => {
+    await supabase.auth.signOut();
+    setAdminAuth({
+      isAdmin: false,
+      adminEmail: null,
+    });
   };
 
   return (
@@ -69,12 +94,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       {children}
     </AdminContext.Provider>
   );
-}
+};
 
-export function useAdmin() {
+export const useAdmin = () => {
   const context = useContext(AdminContext);
   if (context === undefined) {
-    throw new Error("useAdmin must be used within an AdminProvider");
+    throw new Error('useAdmin must be used within an AdminProvider');
   }
   return context;
-}
+};
