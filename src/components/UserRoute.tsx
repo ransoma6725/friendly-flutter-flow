@@ -1,7 +1,7 @@
 
 import { Navigate, useLocation } from "react-router-dom";
 import { ReactNode } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface UserRouteProps {
@@ -9,7 +9,7 @@ interface UserRouteProps {
 }
 
 const UserRoute = ({ children }: UserRouteProps) => {
-  const { isSignedIn, isLoading } = useAuth();
+  const { isSignedIn, isLoading } = useSupabaseAuth();
   const location = useLocation();
 
   if (isLoading) {

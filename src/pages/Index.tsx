@@ -17,27 +17,86 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useOptimizedBookingFlow } from "@/hooks/useOptimizedBookingFlow";
 import { getStepInfo, isAuthStep } from "@/utils/stepHelpers";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { toast } = useToast();
+  const { user, isSignedIn, signIn, signUp, signOut } = useSupabaseAuth();
+  
   const {
     selectedBus,
-    isSignedIn,
     step,
     selectedSeatIds,
     getProgressPercentage,
-    handleSignIn,
-    handleSignUp,
-    handleResetPassword,
     handleSelectBus,
     handleBookSeats,
     handlePayment,
     handleNewBooking,
-    handleSignOut,
     handleGoHome,
     setStep
   } = useOptimizedBookingFlow();
 
   const { title, description } = getStepInfo(step);
+
+  const handleSignIn = async (email: string, password: string) => {
+    const success = await signIn(email, password);
+    if (success) {
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
+      setStep("buses");
+    } else {
+      toast({
+        title: "Sign In Failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSignUp = async (userData: {
+    fullName: string;
+    phone: string;
+    email: string;
+    password: string;
+  }) => {
+    const user = await signUp(userData);
+    if (user) {
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
+      setStep("auth");
+    } else {
+      toast({
+        title: "Sign Up Failed",
+        description: "There was an error creating your account. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    toast({
+      title: "Password Reset",
+      description: "Password reset functionality will be implemented soon.",
+    });
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setStep("auth");
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
+    });
+  };
+
+  if (!isSignedIn && !isAuthStep(step)) {
+    setStep("auth");
+  }
 
   return (
     <ErrorBoundary>
