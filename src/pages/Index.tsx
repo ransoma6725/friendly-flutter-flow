@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
-  const { user, isSignedIn, signIn, signUp, signOut } = useSupabaseAuth();
+  const { user, isSignedIn, signIn, signUp, signOut, isLoading } = useSupabaseAuth();
   
   const {
     selectedBus,
@@ -65,8 +65,8 @@ const Index = () => {
     const user = await signUp(userData);
     if (user) {
       toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
+        title: "Account Created Successfully!",
+        description: "You can now sign in with your credentials.",
       });
       setStep("auth");
     } else {
@@ -94,6 +94,16 @@ const Index = () => {
     });
   };
 
+  // Show loading while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Redirect to auth if not signed in and not on auth step
   if (!isSignedIn && !isAuthStep(step)) {
     setStep("auth");
   }

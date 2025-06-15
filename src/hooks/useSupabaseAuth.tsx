@@ -9,29 +9,47 @@ export const useSupabaseAuth = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Error getting session:", error);
+        } else {
+          console.log("Initial session:", session?.user?.email);
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error("Error in getInitialSession:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getInitialSession();
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+
+        // Handle email confirmation
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log("User signed in successfully:", session.user.email);
+        }
       }
     );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session:", session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -42,11 +60,17 @@ export const useSupabaseAuth = () => {
         return false;
       }
       
-      console.log("Sign in successful:", data.user?.email);
-      return !!data.user;
+      if (data.user) {
+        console.log("Sign in successful:", data.user.email);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error("Sign in error:", error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -57,6 +81,7 @@ export const useSupabaseAuth = () => {
     password: string 
   }): Promise<User | null> => {
     try {
+      setIsLoading(true);
       console.log("Attempting to sign up user:", userData.email);
       
       const { data, error } = await supabase.auth.signUp({
@@ -67,7 +92,7 @@ export const useSupabaseAuth = () => {
             name: userData.fullName,
             phone: userData.phone,
           },
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: undefined // Disable email confirmation for now
         },
       });
       
@@ -76,20 +101,36 @@ export const useSupabaseAuth = () => {
         return null;
       }
       
-      console.log("Sign up successful:", data.user?.email);
-      return data.user;
+      if (data.user) {
+        console.log("Sign up successful:", data.user.email);
+        console.log("User ID:", data.user.id);
+        
+        // If user is created but needs email confirmation
+        if (!data.session && data.user && !data.user.email_confirmed_at) {
+          console.log("User created but email confirmation required");
+        }
+        
+        return data.user;
+      }
+      
+      return null;
     } catch (error) {
       console.error("Sign up error:", error);
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       console.log("Sign out successful");
     } catch (error) {
       console.error("Sign out error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
