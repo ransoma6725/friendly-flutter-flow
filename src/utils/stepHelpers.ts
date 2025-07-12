@@ -1,40 +1,56 @@
 
-export type AppState = "auth" | "signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
+export type Step = "auth" | "signup" | "admin-signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
 
-export const getStepInfo = (step: AppState) => {
-  switch(step) {
+export const getStepInfo = (step: Step) => {
+  switch (step) {
     case "auth":
-      return { title: "CamBus Ticketing System", description: "Sign in to book your bus tickets easily" };
+      return {
+        title: "Welcome to CamBus",
+        description: "Your trusted partner for bus transportation across Cameroon"
+      };
     case "signup":
-      return { title: "Create Account", description: "Register to access our bus ticketing services" };
+      return {
+        title: "Create Your Account",
+        description: "Join CamBus to start booking your bus tickets"
+      };
+    case "admin-signup":
+      return {
+        title: "Create Admin Account",
+        description: "Set up your administrator account for CamBus"
+      };
     case "forgot-password":
-      return { title: "Reset Password", description: "Recover access to your account" };
+      return {
+        title: "Reset Your Password",
+        description: "Enter your email to receive password reset instructions"
+      };
     case "buses":
-      return { title: "Select Your Route", description: "Browse available buses and routes" };
+      return {
+        title: "Choose Your Bus",
+        description: "Select from our available buses for your journey"
+      };
     case "seats":
-      return { title: "Choose Your Seats", description: "Select your preferred seats" };
+      return {
+        title: "Select Your Seats",
+        description: "Choose your preferred seats for the journey"
+      };
     case "payment":
-      return { title: "Payment Details", description: "Complete your payment to confirm booking" };
+      return {
+        title: "Payment Details",
+        description: "Complete your booking with secure payment"
+      };
     case "confirmation":
-      return { title: "Booking Confirmed", description: "Your ticket has been booked successfully" };
+      return {
+        title: "Booking Confirmed",
+        description: "Your booking has been successfully completed"
+      };
     default:
-      return { title: "", description: "" };
+      return {
+        title: "CamBus",
+        description: "Your journey starts here"
+      };
   }
 };
 
-export const getProgressPercentage = (step: AppState): number => {
-  switch(step) {
-    case "auth": 
-    case "signup": 
-    case "forgot-password": return 25;
-    case "buses": return 50;
-    case "seats": return 75;
-    case "payment": 
-    case "confirmation": return 100;
-    default: return 0;
-  }
-};
-
-export const isAuthStep = (step: AppState): boolean => {
-  return ["auth", "signup", "forgot-password"].includes(step);
+export const isAuthStep = (step: Step): boolean => {
+  return ["auth", "signup", "admin-signup", "forgot-password"].includes(step);
 };

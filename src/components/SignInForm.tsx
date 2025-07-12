@@ -3,15 +3,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User } from "lucide-react";
+import { User, Shield } from "lucide-react";
 
 interface SignInFormProps {
   onSignIn: (email: string, password: string) => void;
   onCreateAccount: () => void;
+  onCreateAdminAccount: () => void;
   onForgotPassword: () => void;
 }
 
-const SignInForm = ({ onSignIn, onCreateAccount, onForgotPassword }: SignInFormProps) => {
+const SignInForm = ({ onSignIn, onCreateAccount, onCreateAdminAccount, onForgotPassword }: SignInFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -70,15 +71,36 @@ const SignInForm = ({ onSignIn, onCreateAccount, onForgotPassword }: SignInFormP
           Sign In
         </Button>
         
-        <div className="text-center text-sm">
-          <span className="text-muted-foreground">Don't have an account?</span>{" "}
-          <button 
+        <div className="flex flex-col gap-2">
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Don't have an account?</span>{" "}
+            <button 
+              type="button" 
+              onClick={onCreateAccount}
+              className="text-primary hover:underline font-medium"
+            >
+              Create Account
+            </button>
+          </div>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+          
+          <Button 
             type="button" 
-            onClick={onCreateAccount}
-            className="text-primary hover:underline font-medium"
+            variant="outline"
+            onClick={onCreateAdminAccount}
+            className="w-full flex items-center gap-2"
           >
-            Create Account
-          </button>
+            <Shield className="h-4 w-4" />
+            Create Admin Account
+          </Button>
         </div>
       </form>
     </div>
