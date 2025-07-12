@@ -28,7 +28,16 @@ const AdminLogin = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Provide specific error messages
+        if (error.message.includes("Invalid login credentials")) {
+          throw new Error("Invalid email or password. Please check your credentials.");
+        } else if (error.message.includes("Email not confirmed")) {
+          throw new Error("Please confirm your email before signing in.");
+        } else {
+          throw error;
+        }
+      }
 
       // Check if user is in admin_users table
       const { data: adminUser, error: adminError } = await supabase
@@ -39,7 +48,7 @@ const AdminLogin = () => {
 
       if (adminError || !adminUser) {
         await supabase.auth.signOut();
-        throw new Error('Not authorized as admin');
+        throw new Error('This account does not have admin privileges. Please contact the system administrator.');
       }
 
       toast({
@@ -49,6 +58,7 @@ const AdminLogin = () => {
       
       navigate("/admin");
     } catch (error: any) {
+      console.error("Admin login error:", error);
       toast({
         title: "Authentication failed",
         description: error.message || "Invalid admin credentials",
@@ -70,6 +80,17 @@ const AdminLogin = () => {
         <Card className="shadow-lg border-t-4 border-t-primary">
           <CardContent className="p-6">
             <AdminSignInForm onAdminSignIn={handleAdminSignIn} />
+            
+            {/* Helper text for testing */}
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Test Admin Account:</strong><br />
+                Email: admin@cambus.com<br />
+                <span className="text-xs">
+                  Note: You must first create this account through the regular signup process, then it will have admin access.
+                </span>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
