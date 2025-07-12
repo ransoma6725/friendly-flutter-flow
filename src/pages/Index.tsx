@@ -1,88 +1,121 @@
-
-import { useState } from "react";
+import { buses } from "@/services/mockData";
+import BusList from "@/components/BusList";
+import SeatSelection from "@/components/SeatSelection";
+import SignInForm from "@/components/SignInForm";
+import SignUpForm from "@/components/SignUpForm";
+import AdminSignUpForm from "@/components/AdminSignUpForm";
+import ForgotPasswordForm from "@/components/ForgotPasswordForm";
 import { Info, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import PaymentDetails from "@/components/PaymentDetails";
+import BookingConfirmation from "@/components/BookingConfirmation";
 import AuthContainer from "@/components/AuthContainer";
 import Header from "@/components/layout/Header";
 import BookingSteps from "@/components/booking/BookingSteps";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
-import AuthStepManager from "@/components/auth/AuthStepManager";
-import BookingStepManager from "@/components/booking/BookingStepManager";
-import { useAuthFlow } from "@/hooks/useAuthFlow";
-import { useBookingFlow } from "@/hooks/useBookingFlow";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useOptimizedBookingFlow } from "@/hooks/useOptimizedBookingFlow";
+import { getStepInfo, isAuthStep } from "@/utils/stepHelpers";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { getStepInfo, isAuthStep, getProgressPercentage, Step } from "@/utils/stepHelpers";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { user, isSignedIn, signOut, isLoading } = useSupabaseAuth();
-  const { handleSignIn, handleSignUp, handleAdminSignUp, handleResetPassword } = useAuthFlow();
-  const { selectedBus, selectedSeatIds, handleSelectBus, handleBookSeats, handlePayment, handleNewBooking, handleGoHome } = useBookingFlow();
+  const { toast } = useToast();
+  const { user, isSignedIn, signIn, signUp, signOut, isLoading } = useSupabaseAuth();
+  const { createAdminUser } = useAdminAuth();
   
-  const [step, setStep] = useState<Step>(isSignedIn ? "buses" : "auth");
+  const {
+    selectedBus,
+    step,
+    selectedSeatIds,
+    getProgressPercentage,
+    handleSelectBus,
+    handleBookSeats,
+    handlePayment,
+    handleNewBooking,
+    handleGoHome,
+    setStep
+  } = useOptimizedBookingFlow();
 
   const { title, description } = getStepInfo(step);
 
-  const onSignInSuccess = async (email: string, password: string) => {
-    const success = await handleSignIn(email, password);
+  const handleSignIn = async (email: string, password: string) => {
+    const success = await signIn(email, password);
     if (success) {
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
       setStep("buses");
+    } else {
+      toast({
+        title: "Sign In Failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const onSignUpSuccess = async (userData: {
+  const handleSignUp = async (userData: {
     fullName: string;
     phone: string;
     email: string;
     password: string;
   }) => {
-    const success = await handleSignUp(userData);
-    if (success) {
+    const user = await signUp(userData);
+    if (user) {
+      toast({
+        title: "Account Created Successfully!",
+        description: "You can now sign in with your credentials.",
+      });
       setStep("auth");
+    } else {
+      toast({
+        title: "Sign Up Failed",
+        description: "There was an error creating your account. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const onAdminSignUpSuccess = async (userData: {
+  const handleAdminSignUp = async (userData: {
     fullName: string;
     phone: string;
     email: string;
     password: string;
   }) => {
-    const success = await handleAdminSignUp(userData);
-    if (success) {
+    const { user, error } = await createAdminUser(userData);
+    if (user && !error) {
+      toast({
+        title: "Admin Account Created Successfully!",
+        description: "You can now sign in with admin privileges.",
+      });
       setStep("auth");
+    } else {
+      toast({
+        title: "Admin Sign Up Failed",
+        description: error || "There was an error creating your admin account. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const onSelectBus = (bus: any) => {
-    handleSelectBus(bus);
-    setStep("seats");
-  };
-
-  const onBookSeats = (seatIds: string[]) => {
-    handleBookSeats(seatIds);
-    setStep("payment");
-  };
-
-  const onPayment = () => {
-    handlePayment();
-    setStep("confirmation");
-  };
-
-  const onNewBooking = () => {
-    handleNewBooking();
-    setStep("buses");
-  };
-
-  const onGoHome = () => {
-    handleGoHome();
-    setStep("auth");
+  const handleResetPassword = async (email: string) => {
+    toast({
+      title: "Password Reset",
+      description: "Password reset functionality will be implemented soon.",
+    });
   };
 
   const handleSignOut = async () => {
     await signOut();
     setStep("auth");
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
+    });
   };
 
   // Show loading while auth is initializing
@@ -123,33 +156,72 @@ const Index = () => {
 
           {isAuthStep(step) ? (
             <AuthContainer title={title} description={description}>
-              <AuthStepManager
-                currentStep={step}
-                onStepChange={setStep}
-                onSignIn={onSignInSuccess}
-                onSignUp={onSignUpSuccess}
-                onAdminSignUp={onAdminSignUpSuccess}
-                onResetPassword={handleResetPassword}
-              />
+              {step === "auth" && !isSignedIn && (
+                <SignInForm 
+                  onSignIn={handleSignIn} 
+                  onCreateAccount={() => setStep("signup")}
+                  onCreateAdminAccount={() => setStep("admin-signup")}
+                  onForgotPassword={() => setStep("forgot-password")}
+                />
+              )}
+              
+              {step === "signup" && (
+                <SignUpForm 
+                  onSignUp={handleSignUp}
+                  onBack={() => setStep("auth")}
+                />
+              )}
+              
+              {step === "admin-signup" && (
+                <AdminSignUpForm 
+                  onAdminSignUp={handleAdminSignUp}
+                  onBack={() => setStep("auth")}
+                />
+              )}
+              
+              {step === "forgot-password" && (
+                <ForgotPasswordForm 
+                  onResetPassword={handleResetPassword}
+                  onBack={() => setStep("auth")}
+                />
+              )}
             </AuthContainer>
           ) : (
             <BookingSteps
               step={step}
               title={title}
               description={description}
-              progressPercentage={getProgressPercentage(step)}
+              progressPercentage={getProgressPercentage()}
             >
-              <BookingStepManager
-                currentStep={step}
-                selectedBus={selectedBus}
-                selectedSeatIds={selectedSeatIds}
-                onStepChange={setStep}
-                onSelectBus={onSelectBus}
-                onBookSeats={onBookSeats}
-                onPayment={onPayment}
-                onNewBooking={onNewBooking}
-                onGoHome={onGoHome}
-              />
+              {step === "buses" && (
+                <BusList buses={buses} onSelectBus={handleSelectBus} />
+              )}
+              
+              {step === "seats" && selectedBus && (
+                <SeatSelection 
+                  bus={selectedBus} 
+                  onBookSeats={handleBookSeats} 
+                  onBack={() => setStep("buses")}
+                />
+              )}
+              
+              {step === "payment" && selectedBus && (
+                <PaymentDetails 
+                  bus={selectedBus}
+                  selectedSeatIds={selectedSeatIds}
+                  onPayment={handlePayment}
+                  onBack={() => setStep("seats")}
+                />
+              )}
+              
+              {step === "confirmation" && selectedBus && (
+                <BookingConfirmation
+                  bus={selectedBus}
+                  selectedSeatIds={selectedSeatIds}
+                  onNewBooking={handleNewBooking}
+                  onGoHome={handleGoHome}
+                />
+              )}
               
               {isSignedIn && !["confirmation"].includes(step) && (
                 <div className="mt-4 md:mt-6 flex justify-end">

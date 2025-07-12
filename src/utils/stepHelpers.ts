@@ -1,9 +1,6 @@
 
 export type Step = "auth" | "signup" | "admin-signup" | "forgot-password" | "buses" | "seats" | "payment" | "confirmation";
 
-// Add AppState type alias for backward compatibility
-export type AppState = Step;
-
 export const getStepInfo = (step: Step) => {
   switch (step) {
     case "auth":
@@ -56,24 +53,4 @@ export const getStepInfo = (step: Step) => {
 
 export const isAuthStep = (step: Step): boolean => {
   return ["auth", "signup", "admin-signup", "forgot-password"].includes(step);
-};
-
-export const getProgressPercentage = (step: Step): number => {
-  switch (step) {
-    case "auth":
-    case "signup":
-    case "admin-signup":
-    case "forgot-password":
-      return 0;
-    case "buses":
-      return 25;
-    case "seats":
-      return 50;
-    case "payment":
-      return 75;
-    case "confirmation":
-      return 100;
-    default:
-      return 0;
-  }
 };
