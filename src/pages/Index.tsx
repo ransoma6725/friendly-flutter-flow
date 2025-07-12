@@ -1,9 +1,9 @@
+
 import { buses } from "@/services/mockData";
 import BusList from "@/components/BusList";
 import SeatSelection from "@/components/SeatSelection";
 import SignInForm from "@/components/SignInForm";
 import SignUpForm from "@/components/SignUpForm";
-import AdminSignUpForm from "@/components/AdminSignUpForm";
 import ForgotPasswordForm from "@/components/ForgotPasswordForm";
 import { Info, Shield } from "lucide-react";
 import PaymentDetails from "@/components/PaymentDetails";
@@ -18,13 +18,11 @@ import { Link } from "react-router-dom";
 import { useOptimizedBookingFlow } from "@/hooks/useOptimizedBookingFlow";
 import { getStepInfo, isAuthStep } from "@/utils/stepHelpers";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
   const { user, isSignedIn, signIn, signUp, signOut, isLoading } = useSupabaseAuth();
-  const { createAdminUser } = useAdminAuth();
   
   const {
     selectedBus,
@@ -75,28 +73,6 @@ const Index = () => {
       toast({
         title: "Sign Up Failed",
         description: "There was an error creating your account. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAdminSignUp = async (userData: {
-    fullName: string;
-    phone: string;
-    email: string;
-    password: string;
-  }) => {
-    const { user, error } = await createAdminUser(userData);
-    if (user && !error) {
-      toast({
-        title: "Admin Account Created Successfully!",
-        description: "You can now sign in with admin privileges.",
-      });
-      setStep("auth");
-    } else {
-      toast({
-        title: "Admin Sign Up Failed",
-        description: error || "There was an error creating your admin account. Please try again.",
         variant: "destructive",
       });
     }
@@ -160,7 +136,6 @@ const Index = () => {
                 <SignInForm 
                   onSignIn={handleSignIn} 
                   onCreateAccount={() => setStep("signup")}
-                  onCreateAdminAccount={() => setStep("admin-signup")}
                   onForgotPassword={() => setStep("forgot-password")}
                 />
               )}
@@ -168,13 +143,6 @@ const Index = () => {
               {step === "signup" && (
                 <SignUpForm 
                   onSignUp={handleSignUp}
-                  onBack={() => setStep("auth")}
-                />
-              )}
-              
-              {step === "admin-signup" && (
-                <AdminSignUpForm 
-                  onAdminSignUp={handleAdminSignUp}
                   onBack={() => setStep("auth")}
                 />
               )}
