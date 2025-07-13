@@ -1,92 +1,211 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Bus, Route, Package, Clock, Users } from "lucide-react";
-import { adminSidebarItems } from "@/constants/sidebarItems";
+import { Users, Bus, Calendar, Settings, BarChart3, Shield } from "lucide-react";
+import { useAdmin } from "@/contexts/AdminContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const stats = [
-    { title: "Total Buses", value: "24", icon: Bus, color: "bg-blue-100 text-blue-700" },
-    { title: "Available Routes", value: "18", icon: Route, color: "bg-green-100 text-green-700" },
-    { title: "Packages", value: "146", icon: Package, color: "bg-amber-100 text-amber-700" },
-    { title: "Active Bookings", value: "87", icon: Clock, color: "bg-purple-100 text-purple-700" },
+  const { adminAuth, adminLogout } = useAdmin();
+  const { toast } = useToast();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalBuses: 0,
+    totalBookings: 0,
+    totalRevenue: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch users count
+        const { count: usersCount } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch buses count
+        const { count: busesCount } = await supabase
+          .from('buses')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch bookings count and total revenue
+        const { data: bookings, count: bookingsCount } = await supabase
+          .from('bookings')
+          .select('total_price', { count: 'exact' });
+
+        const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.total_price, 0) || 0;
+
+        setStats({
+          totalUsers: usersCount || 0,
+          totalBuses: busesCount || 0,
+          totalBookings: bookingsCount || 0,
+          totalRevenue,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard statistics",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchStats();
+  }, [toast]);
+
+  const sidebarItems = [
+    {
+      label: "Management",
+      items: [
+        { title: "Dashboard", path: "/admin", icon: BarChart3 },
+        { title: "Users", path: "/admin/users", icon: Users },
+        { title: "Buses", path: "/admin/buses", icon: Bus },
+        { title: "Bookings", path: "/admin/bookings", icon: Calendar },
+        { title: "Routes", path: "/admin/routes", icon: Settings },
+      ],
+    },
   ];
 
+  const handleLogout = async () => {
+    await adminLogout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out of the admin panel",
+    });
+  };
+
   return (
-    <DashboardLayout sidebarItems={adminSidebarItems} userName="Admin" userRole="Administrator">
+    <DashboardLayout 
+      sidebarItems={sidebarItems}
+      userName={adminAuth.adminEmail || "Admin"}
+      userRole="Administrator"
+    >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agency Dashboard</h1>
-          <p className="text-muted-foreground">Manage your buses, routes, and schedules</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome back, {adminAuth.adminEmail}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              Administrator
+            </Badge>
+            <Button variant="outline" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         </div>
-        
+
+        {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <div className={`rounded-full p-2 ${stat.color}`}>
-                  <stat.icon className="h-4 w-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Recent Bookings</CardTitle>
-              <CardDescription>Overview of recent bookings and their status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 text-sm font-medium text-muted-foreground">
-                  <div>Customer</div>
-                  <div>Route</div>
-                  <div>Status</div>
-                </div>
-                {Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="grid grid-cols-3 items-center">
-                    <div className="font-medium">Customer {i + 1}</div>
-                    <div>Douala to Yaoundé</div>
-                    <div className="rounded-full bg-green-100 text-green-700 text-xs px-2 py-1 w-fit">
-                      Confirmed
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
           <Card>
-            <CardHeader>
-              <CardTitle>Bus Occupancy</CardTitle>
-              <CardDescription>Average occupancy by route</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {["Douala-Yaoundé", "Bamenda-Douala", "Buea-Limbe"].map((route, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div>{route}</div>
-                      <div className="font-medium">{75 - i * 10}%</div>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary" 
-                        style={{ width: `${75 - i * 10}%` }} 
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Registered users
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Buses</CardTitle>
+              <Bus className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalBuses}</div>
+              <p className="text-xs text-muted-foreground">
+                Active buses
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalBookings}</div>
+              <p className="text-xs text-muted-foreground">
+                All time bookings
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${stats.totalRevenue}</div>
+              <p className="text-xs text-muted-foreground">
+                Total earnings
+              </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Button variant="outline" className="h-16 flex-col gap-2">
+                <Users className="h-5 w-5" />
+                Manage Users
+              </Button>
+              <Button variant="outline" className="h-16 flex-col gap-2">
+                <Bus className="h-5 w-5" />
+                Add New Bus
+              </Button>
+              <Button variant="outline" className="h-16 flex-col gap-2">
+                <Calendar className="h-5 w-5" />
+                View Bookings
+              </Button>
+              <Button variant="outline" className="h-16 flex-col gap-2">
+                <Settings className="h-5 w-5" />
+                System Settings
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm">
+                <strong>Admin Email:</strong> {adminAuth.adminEmail}
+              </p>
+              <p className="text-sm">
+                <strong>Login Time:</strong> {new Date().toLocaleString()}
+              </p>
+              <p className="text-sm">
+                <strong>System Status:</strong> <Badge variant="secondary" className="ml-2">Online</Badge>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

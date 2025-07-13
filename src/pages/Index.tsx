@@ -120,14 +120,12 @@ const Index = () => {
               </Button>
             </Link>
             
-            {isSignedIn && (
-              <Link to="/admin/login">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Shield className="h-4 w-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Button>
-              </Link>
-            )}
+            <Link to="/admin/login">
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin Login</span>
+              </Button>
+            </Link>
           </Header>
 
           {isAuthStep(step) ? (

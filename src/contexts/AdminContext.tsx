@@ -75,10 +75,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const adminLogin = (email: string) => {
-    setAdminAuth({
-      isAdmin: true,
-      adminEmail: email,
-    });
+    // This is called when admin credentials are verified
+    if (email === 'admin@cambus.com') {
+      setAdminAuth({
+        isAdmin: true,
+        adminEmail: email,
+      });
+    }
   };
 
   const adminLogout = async () => {

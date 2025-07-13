@@ -22,33 +22,41 @@ const AdminLogin = () => {
 
   const handleAdminSignIn = async (email: string, password: string) => {
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
+      console.log("Attempting admin login with:", email);
+      
+      // Check credentials directly against admin_users table
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('email, password')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (adminError || !adminUser) {
+        console.error("Admin login error:", adminError);
+        throw new Error('Invalid admin credentials. Please check your email and password.');
+      }
+
+      // If credentials match, sign in with Supabase Auth (or create session if user doesn't exist)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        // Provide specific error messages
-        if (error.message.includes("Invalid login credentials")) {
-          throw new Error("Invalid email or password. Please check your credentials.");
-        } else if (error.message.includes("Email not confirmed")) {
-          throw new Error("Please confirm your email before signing in.");
-        } else {
-          throw error;
-        }
+      // If user doesn't exist in auth, we'll still allow admin access based on admin_users table
+      if (authError && authError.message.includes("Invalid login credentials")) {
+        console.log("User not in auth.users, but valid admin credentials found");
+        // Manually set admin state since credentials are valid
+        toast({
+          title: "Admin login successful",
+          description: "Welcome to the admin dashboard",
+        });
+        navigate("/admin");
+        return;
       }
 
-      // Check if user is in admin_users table
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('email')
-        .eq('email', email)
-        .single();
-
-      if (adminError || !adminUser) {
-        await supabase.auth.signOut();
-        throw new Error('This account does not have admin privileges. Please contact the system administrator.');
+      if (authError) {
+        throw authError;
       }
 
       toast({
@@ -81,14 +89,12 @@ const AdminLogin = () => {
           <CardContent className="p-6">
             <AdminSignInForm onAdminSignIn={handleAdminSignIn} />
             
-            {/* Helper text for testing */}
+            {/* Admin credentials info */}
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Test Admin Account:</strong><br />
+                <strong>Admin Login Credentials:</strong><br />
                 Email: admin@cambus.com<br />
-                <span className="text-xs">
-                  Note: You must first create this account through the regular signup process, then it will have admin access.
-                </span>
+                Password: admin pass
               </p>
             </div>
           </CardContent>
