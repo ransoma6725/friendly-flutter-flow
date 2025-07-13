@@ -1,17 +1,20 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import About from "@/pages/About";
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClient } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRoute from "@/components/AdminRoute";
 import UserRoute from "@/components/UserRoute";
 import { AdminProvider } from "@/contexts/AdminContext";
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AdminProvider>
           <Toaster />
@@ -28,7 +31,7 @@ function App() {
           </Routes>
         </AdminProvider>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
