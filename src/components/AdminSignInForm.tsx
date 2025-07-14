@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminSignInFormProps {
   onAdminSignIn: (email: string, password: string) => void;
@@ -16,6 +17,25 @@ const AdminSignInForm = ({ onAdminSignIn }: AdminSignInFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdminSignIn(email, password);
+  };
+
+  const testDatabaseConnection = async () => {
+    try {
+      console.log("Testing database connection...");
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('email');
+      
+      console.log("Database test result:", { data, error });
+      
+      if (error) {
+        console.error("Database connection error:", error);
+      } else {
+        console.log("Database connection successful. Found", data?.length, "admin users");
+      }
+    } catch (err) {
+      console.error("Database connection test failed:", err);
+    }
   };
 
   return (
@@ -57,6 +77,15 @@ const AdminSignInForm = ({ onAdminSignIn }: AdminSignInFormProps) => {
         
         <Button type="submit" className="w-full">
           Sign In as Admin
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={testDatabaseConnection}
+          className="w-full"
+        >
+          Test Database Connection
         </Button>
       </form>
     </div>
