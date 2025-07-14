@@ -7,6 +7,7 @@ import { Bus } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -76,18 +77,14 @@ const AdminLogin = () => {
           <CardContent className="p-6">
             <AdminSignInForm onAdminSignIn={handleAdminSignIn} />
             
-            {/* Updated admin credentials info */}
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Admin Login Credentials:</strong><br />
-                <strong>Option 1:</strong><br />
-                Email: admin@cambus.com<br />
-                Password: admin123<br />
-                <br />
-                <strong>Option 2:</strong><br />
-                Email: superadmin@cambus.com<br />
-                Password: superadmin123
-              </p>
+            <div className="mt-6 text-center">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/admin/register")}
+                className="w-full"
+              >
+                Create New Admin Account
+              </Button>
             </div>
           </CardContent>
         </Card>

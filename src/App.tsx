@@ -5,6 +5,7 @@ import About from "@/pages/About";
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminLogin from "@/pages/admin/AdminLogin";
+import AdminRegister from "@/pages/admin/AdminRegister";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRoute from "@/components/AdminRoute";
 import UserRoute from "@/components/UserRoute";
@@ -24,6 +25,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/about" element={<About />} />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/register" element={<AdminRegister />} />
               
               {/* Admin Routes - only accessible when authenticated as admin */}
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
