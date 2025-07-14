@@ -22,74 +22,41 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    // Check if user is authenticated and is admin
-    const checkAdminAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Check if user is in admin_users table
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('email')
-          .eq('email', session.user.email)
-          .single();
-        
-        if (adminUser) {
-          setAdminAuth({
-            isAdmin: true,
-            adminEmail: session.user.email || null,
-          });
+    // Check localStorage for existing admin session
+    const storedAdminAuth = localStorage.getItem('adminAuth');
+    if (storedAdminAuth) {
+      try {
+        const parsedAuth = JSON.parse(storedAdminAuth);
+        if (parsedAuth.isAdmin && parsedAuth.adminEmail) {
+          setAdminAuth(parsedAuth);
         }
+      } catch (error) {
+        console.error('Error parsing stored admin auth:', error);
+        localStorage.removeItem('adminAuth');
       }
-    };
-
-    checkAdminAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setAdminAuth({
-            isAdmin: false,
-            adminEmail: null,
-          });
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          // Check if user is admin
-          const { data: adminUser } = await supabase
-            .from('admin_users')
-            .select('email')
-            .eq('email', session.user.email)
-            .single();
-          
-          if (adminUser) {
-            setAdminAuth({
-              isAdmin: true,
-              adminEmail: session.user.email || null,
-            });
-          }
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const adminLogin = (email: string) => {
-    // This is called when admin credentials are verified
-    if (email === 'admin@cambus.com') {
-      setAdminAuth({
-        isAdmin: true,
-        adminEmail: email,
-      });
-    }
+    console.log("Setting admin login for:", email);
+    const newAdminAuth = {
+      isAdmin: true,
+      adminEmail: email,
+    };
+    
+    setAdminAuth(newAdminAuth);
+    // Store in localStorage for persistence
+    localStorage.setItem('adminAuth', JSON.stringify(newAdminAuth));
   };
 
   const adminLogout = async () => {
-    await supabase.auth.signOut();
+    console.log("Logging out admin");
     setAdminAuth({
       isAdmin: false,
       adminEmail: null,
     });
+    // Clear localStorage
+    localStorage.removeItem('adminAuth');
   };
 
   return (
