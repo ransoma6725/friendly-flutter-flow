@@ -58,12 +58,13 @@ const AdminRegister = () => {
         throw new Error('An admin account with this email already exists.');
       }
 
-      // Create new admin user
+      // Create new admin user with a generated UUID
+      const adminId = crypto.randomUUID();
       const { data, error } = await supabase
         .from('admin_users')
         .insert([
           {
-            id: crypto.randomUUID(),
+            id: adminId,
             email: email,
             password: password,
           }
@@ -74,13 +75,18 @@ const AdminRegister = () => {
 
       if (error) {
         console.error("Admin creation error:", error);
-        throw new Error('Failed to create admin account. Please try again.');
+        throw new Error(`Failed to create admin account: ${error.message}`);
       }
 
       toast({
         title: "Success",
         description: "Admin account created successfully!",
       });
+
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
 
       // Redirect to admin login
       navigate("/admin/login");
