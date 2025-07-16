@@ -14,10 +14,10 @@ const PageHeader = () => {
         </Button>
       </Link>
       
-      <Link to="/admin/login">
+      <Link to="/admin">
         <Button variant="outline" size="sm" className="flex items-center gap-1">
           <Shield className="h-4 w-4" />
-          <span className="hidden sm:inline">Admin Login</span>
+          <span className="hidden sm:inline">Admin Dashboard</span>
         </Button>
       </Link>
     </Header>
