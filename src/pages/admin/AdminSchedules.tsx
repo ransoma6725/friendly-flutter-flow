@@ -1,8 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,15 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Clock, Plus } from "lucide-react";
+import { Plus, Search, Clock, MapPin, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminSidebarItems } from "@/constants/sidebarItems";
@@ -37,89 +29,45 @@ interface ScheduleData {
   totalSeats: number;
 }
 
-const initialSchedules: ScheduleData[] = [
-  {
-    id: "1",
-    busName: "Camair Express",
-    route: "Douala → Yaoundé",
-    departureTime: "07:30",
-    arrivalTime: "10:45",
-    driver: "Tabi James",
-    status: "scheduled",
-    price: 5000,
-    availableSeats: 28,
-    totalSeats: 45
-  },
-  {
-    id: "2",
-    busName: "Garanti Express",
-    route: "Yaoundé → Bamenda",
-    departureTime: "09:00",
-    arrivalTime: "15:30",
-    driver: "Epie Marcus",
-    status: "departed",
-    price: 7500,
-    availableSeats: 12,
-    totalSeats: 50
-  },
-  {
-    id: "3",
-    busName: "Cardinal Express",
-    route: "Douala → Limbe",
-    departureTime: "12:15",
-    arrivalTime: "13:45",
-    driver: "Mbarga Paul",
-    status: "arrived",
-    price: 2000,
-    availableSeats: 0,
-    totalSeats: 55
-  },
-  {
-    id: "4",
-    busName: "Moghamo Express",
-    route: "Bamenda → Buea",
-    departureTime: "06:00",
-    arrivalTime: "12:30",
-    driver: "Fon Peter",
-    status: "scheduled",
-    price: 5500,
-    availableSeats: 40,
-    totalSeats: 40
-  }
-];
-
 const AdminSchedules = () => {
   const { toast } = useToast();
-  const [schedules, setSchedules] = useState<ScheduleData[]>(initialSchedules);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [schedules, setSchedules] = useState<ScheduleData[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredSchedules = filterStatus === "all" 
-    ? schedules 
-    : schedules.filter(schedule => schedule.status === filterStatus);
-  
+  useEffect(() => {
+    const sampleSchedules: ScheduleData[] = [
+      {
+        id: "1",
+        busName: "Camair Express",
+        route: "Yaoundé → Douala",
+        departureTime: "2024-01-20T08:00:00",
+        arrivalTime: "2024-01-20T11:30:00",
+        driver: "Jean Mballa",
+        status: "scheduled",
+        price: 25000,
+        availableSeats: 35,
+        totalSeats: 45
+      }
+    ];
+    setSchedules(sampleSchedules);
+  }, []);
+
   const getStatusBadge = (status: ScheduleData["status"]) => {
-    switch (status) {
-      case "scheduled":
-        return <Badge variant="outline" className="border-blue-500 text-blue-500">Scheduled</Badge>;
-      case "departed":
-        return <Badge className="bg-amber-500">Departed</Badge>;
-      case "arrived":
-        return <Badge className="bg-green-500">Arrived</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
-    }
+    const statusConfig = {
+      scheduled: { color: "bg-blue-100 text-blue-800", label: "Scheduled" },
+      departed: { color: "bg-yellow-100 text-yellow-800", label: "Departed" },
+      arrived: { color: "bg-green-100 text-green-800", label: "Arrived" },
+      cancelled: { color: "bg-red-100 text-red-800", label: "Cancelled" }
+    };
+    
+    const config = statusConfig[status];
+    return <Badge className={config.color}>{config.label}</Badge>;
   };
 
-  const handleUpdateStatus = (id: string, status: ScheduleData["status"]) => {
-    setSchedules(schedules.map(schedule => 
-      schedule.id === id ? { ...schedule, status } : schedule
-    ));
-    
-    toast({
-      title: "Status updated",
-      description: `Schedule status changed to ${status}.`,
-    });
-  };
+  const filteredSchedules = schedules.filter(schedule =>
+    schedule.busName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    schedule.route.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout sidebarItems={adminSidebarItems}>
@@ -132,39 +80,29 @@ const AdminSchedules = () => {
           
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            New Schedule
+            Add Schedule
           </Button>
         </div>
-        
+
         <Card>
-          <div className="p-4 flex justify-between items-center">
-            <Input 
-              placeholder="Search schedules..." 
-              className="max-w-xs"
-            />
-            
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="departed">Departed</SelectItem>
-                <SelectItem value="arrived">Arrived</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search schedules..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-          
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Bus</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>Departure</TableHead>
-                <TableHead>Arrival</TableHead>
+                <TableHead>Bus & Route</TableHead>
                 <TableHead>Driver</TableHead>
+                <TableHead>Departure</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Seats</TableHead>
                 <TableHead>Status</TableHead>
@@ -173,39 +111,19 @@ const AdminSchedules = () => {
             <TableBody>
               {filteredSchedules.map((schedule) => (
                 <TableRow key={schedule.id}>
-                  <TableCell className="font-medium">{schedule.busName}</TableCell>
-                  <TableCell>{schedule.route}</TableCell>
-                  <TableCell>{schedule.departureTime}</TableCell>
-                  <TableCell>{schedule.arrivalTime}</TableCell>
-                  <TableCell>{schedule.driver}</TableCell>
-                  <TableCell>{schedule.price.toLocaleString()} XAF</TableCell>
                   <TableCell>
-                    {schedule.availableSeats}/{schedule.totalSeats}
-                  </TableCell>
-                  <TableCell>
-                    <select
-                      className="p-1 text-xs border rounded"
-                      value={schedule.status}
-                      onChange={(e) => handleUpdateStatus(schedule.id, e.target.value as ScheduleData["status"])}
-                    >
-                      <option value="scheduled">Scheduled</option>
-                      <option value="departed">Departed</option>
-                      <option value="arrived">Arrived</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredSchedules.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                      <Clock className="h-8 w-8 mb-2" />
-                      <p>No schedules found</p>
+                    <div>
+                      <div className="font-medium">{schedule.busName}</div>
+                      <div className="text-sm text-muted-foreground">{schedule.route}</div>
                     </div>
                   </TableCell>
+                  <TableCell>{schedule.driver}</TableCell>
+                  <TableCell>{new Date(schedule.departureTime).toLocaleString()}</TableCell>
+                  <TableCell>{schedule.price.toLocaleString()} XAF</TableCell>
+                  <TableCell>{schedule.availableSeats}/{schedule.totalSeats}</TableCell>
+                  <TableCell>{getStatusBadge(schedule.status)}</TableCell>
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </Card>

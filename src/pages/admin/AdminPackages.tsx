@@ -1,8 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,8 +8,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Package, Plus, Search, MapPin, User, Phone, Weight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminSidebarItems } from "@/constants/sidebarItems";
@@ -20,85 +30,137 @@ import { adminSidebarItems } from "@/constants/sidebarItems";
 interface PackageData {
   id: string;
   trackingId: string;
-  sender: string;
-  recipient: string;
+  senderName: string;
+  senderPhone: string;
+  recipientName: string;
+  recipientPhone: string;
   origin: string;
   destination: string;
   weight: number;
-  status: "pending" | "in-transit" | "delivered";
+  description: string;
   price: number;
+  status: "pending" | "in-transit" | "delivered" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
 }
-
-const initialPackages: PackageData[] = [
-  {
-    id: "1",
-    trackingId: "PKG-001-2025",
-    sender: "Ebai John",
-    recipient: "Atanga Mary",
-    origin: "Douala",
-    destination: "Yaoundé",
-    weight: 5.2,
-    status: "in-transit",
-    price: 3500
-  },
-  {
-    id: "2",
-    trackingId: "PKG-002-2025",
-    sender: "Tambe Peter",
-    recipient: "Bih Sarah",
-    origin: "Bamenda",
-    destination: "Buea",
-    weight: 3.0,
-    status: "pending",
-    price: 2800
-  },
-  {
-    id: "3",
-    trackingId: "PKG-003-2025",
-    sender: "Ashu Vincent",
-    recipient: "Ngwa Ernest",
-    origin: "Yaoundé",
-    destination: "Douala",
-    weight: 8.5,
-    status: "delivered",
-    price: 4200
-  }
-];
 
 const AdminPackages = () => {
   const { toast } = useToast();
-  const [packages, setPackages] = useState<PackageData[]>(initialPackages);
+  const [packages, setPackages] = useState<PackageData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<PackageData | null>(null);
+  const [newPackage, setNewPackage] = useState<Partial<PackageData>>({
+    senderName: "",
+    senderPhone: "",
+    recipientName: "",
+    recipientPhone: "",
+    origin: "",
+    destination: "",
+    weight: 0,
+    description: "",
+    price: 0,
+    status: "pending"
+  });
 
-  const filteredPackages = packages.filter(pkg => 
-    pkg.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.recipient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.destination.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const getStatusBadge = (status: PackageData["status"]) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="outline" className="border-amber-500 text-amber-500">Pending</Badge>;
-      case "in-transit":
-        return <Badge className="bg-blue-500">In Transit</Badge>;
-      case "delivered":
-        return <Badge className="bg-green-500">Delivered</Badge>;
+  useEffect(() => {
+    const samplePackages: PackageData[] = [
+      {
+        id: "1",
+        trackingId: "PKG-001-2024",
+        senderName: "Marie Nguema",
+        senderPhone: "+237 679 123 456",
+        recipientName: "Paul Manga",
+        recipientPhone: "+237 695 789 012",
+        origin: "Yaoundé",
+        destination: "Douala",
+        weight: 2.5,
+        description: "Electronics - Laptop",
+        price: 15000,
+        status: "in-transit",
+        createdAt: "2024-01-15T10:30:00Z",
+        updatedAt: "2024-01-15T14:20:00Z"
+      }
+    ];
+    setPackages(samplePackages);
+  }, []);
+
+  const generateTrackingId = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const year = new Date().getFullYear();
+    return `PKG-${timestamp}-${year}`;
+  };
+
+  const handleSavePackage = () => {
+    if (!newPackage.senderName || !newPackage.recipientName) {
+      toast({
+        title: "Missing information",
+        description: "Please fill out all required fields.",
+        variant: "destructive"
+      });
+      return;
     }
+
+    const packageData = { ...newPackage, price: newPackage.price || 0 } as PackageData;
+
+    if (editingPackage) {
+      setPackages(packages.map(pkg => 
+        pkg.id === editingPackage.id 
+          ? { ...pkg, ...packageData, updatedAt: new Date().toISOString() }
+          : pkg
+      ));
+      toast({
+        title: "Package updated",
+        description: `Package ${editingPackage.trackingId} has been updated.`,
+      });
+    } else {
+      const newPkg: PackageData = {
+        ...packageData,
+        id: Date.now().toString(),
+        trackingId: generateTrackingId(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setPackages([newPkg, ...packages]);
+      toast({
+        title: "Package created",
+        description: `Package ${newPkg.trackingId} has been created.`,
+      });
+    }
+    
+    setDialogOpen(false);
+    setNewPackage({
+      senderName: "",
+      senderPhone: "",
+      recipientName: "",
+      recipientPhone: "",
+      origin: "",
+      destination: "",
+      weight: 0,
+      description: "",
+      price: 0,
+      status: "pending"
+    });
+    setEditingPackage(null);
   };
 
-  const handleUpdateStatus = (id: string, status: PackageData["status"]) => {
-    setPackages(packages.map(pkg => 
-      pkg.id === id ? { ...pkg, status } : pkg
-    ));
+  const getStatusBadge = (status: PackageData["status"]) => {
+    const statusConfig = {
+      pending: { color: "bg-yellow-100 text-yellow-800", label: "Pending" },
+      "in-transit": { color: "bg-blue-100 text-blue-800", label: "In Transit" },
+      delivered: { color: "bg-green-100 text-green-800", label: "Delivered" },
+      cancelled: { color: "bg-red-100 text-red-800", label: "Cancelled" }
+    };
     
-    toast({
-      title: "Status updated",
-      description: `Package ${id} status changed to ${status}.`,
-    });
+    const config = statusConfig[status];
+    return <Badge className={config.color}>{config.label}</Badge>;
   };
+
+  const filteredPackages = packages.filter(pkg =>
+    pkg.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pkg.senderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pkg.recipientName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout sidebarItems={adminSidebarItems}>
@@ -106,25 +168,69 @@ const AdminPackages = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Packages</h1>
-            <p className="text-muted-foreground">Manage parcel shipments and tracking</p>
+            <p className="text-muted-foreground">Manage package deliveries and tracking</p>
           </div>
           
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Package
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Package
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Package</DialogTitle>
+                <DialogDescription>Enter package details</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <Input
+                  placeholder="Sender Name"
+                  value={newPackage.senderName}
+                  onChange={(e) => setNewPackage({ ...newPackage, senderName: e.target.value })}
+                />
+                <Input
+                  placeholder="Recipient Name"
+                  value={newPackage.recipientName}
+                  onChange={(e) => setNewPackage({ ...newPackage, recipientName: e.target.value })}
+                />
+                <Input
+                  placeholder="Origin"
+                  value={newPackage.origin}
+                  onChange={(e) => setNewPackage({ ...newPackage, origin: e.target.value })}
+                />
+                <Input
+                  placeholder="Destination"
+                  value={newPackage.destination}
+                  onChange={(e) => setNewPackage({ ...newPackage, destination: e.target.value })}
+                />
+                <Input
+                  placeholder="Price (XAF)"
+                  type="number"
+                  value={newPackage.price}
+                  onChange={(e) => setNewPackage({ ...newPackage, price: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSavePackage}>Add Package</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-        
+
         <Card>
           <div className="p-4">
-            <Input 
-              placeholder="Search packages by tracking ID, sender, recipient..." 
-              className="max-w-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search packages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-          
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -132,7 +238,6 @@ const AdminPackages = () => {
                 <TableHead>Sender</TableHead>
                 <TableHead>Recipient</TableHead>
                 <TableHead>Route</TableHead>
-                <TableHead>Weight</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -141,34 +246,13 @@ const AdminPackages = () => {
               {filteredPackages.map((pkg) => (
                 <TableRow key={pkg.id}>
                   <TableCell className="font-medium">{pkg.trackingId}</TableCell>
-                  <TableCell>{pkg.sender}</TableCell>
-                  <TableCell>{pkg.recipient}</TableCell>
+                  <TableCell>{pkg.senderName}</TableCell>
+                  <TableCell>{pkg.recipientName}</TableCell>
                   <TableCell>{pkg.origin} → {pkg.destination}</TableCell>
-                  <TableCell>{pkg.weight} kg</TableCell>
                   <TableCell>{pkg.price.toLocaleString()} XAF</TableCell>
-                  <TableCell>
-                    <select
-                      className="p-1 text-xs border rounded"
-                      value={pkg.status}
-                      onChange={(e) => handleUpdateStatus(pkg.id, e.target.value as PackageData["status"])}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in-transit">In Transit</option>
-                      <option value="delivered">Delivered</option>
-                    </select>
-                  </TableCell>
+                  <TableCell>{getStatusBadge(pkg.status)}</TableCell>
                 </TableRow>
               ))}
-              {filteredPackages.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                      <Package className="h-8 w-8 mb-2" />
-                      <p>No packages found</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </Card>

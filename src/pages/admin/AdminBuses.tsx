@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -31,37 +31,65 @@ import { Plus, MoreHorizontal, Pencil, Trash, Bus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminSidebarItems } from "@/constants/sidebarItems";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BusData {
   id: string;
   name: string;
-  plateNumber: string;
-  capacity: number;
-  status: "active" | "maintenance" | "inactive";
+  from_location: string;
+  to_location: string;
+  departure_time: string;
+  arrival_time: string;
+  price: number;
+  available_seats: number;
+  total_seats: number;
 }
-
-const initialBuses: BusData[] = [
-  { id: "1", name: "Camair Express", plateNumber: "SW-123-XA", capacity: 45, status: "active" },
-  { id: "2", name: "Garanti Express", plateNumber: "LT-456-YB", capacity: 50, status: "active" },
-  { id: "3", name: "Cardinal Express", plateNumber: "CE-789-ZC", capacity: 55, status: "maintenance" },
-  { id: "4", name: "Moghamo Express", plateNumber: "NW-012-VD", capacity: 40, status: "inactive" },
-  { id: "5", name: "Touristique Express", plateNumber: "SW-345-WE", capacity: 48, status: "active" },
-];
 
 const AdminBuses = () => {
   const { toast } = useToast();
-  const [buses, setBuses] = useState<BusData[]>(initialBuses);
+  const [buses, setBuses] = useState<BusData[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBus, setEditingBus] = useState<BusData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [newBus, setNewBus] = useState<Partial<BusData>>({
     name: "",
-    plateNumber: "",
-    capacity: 45,
-    status: "active"
+    from_location: "",
+    to_location: "",
+    departure_time: "",
+    arrival_time: "",
+    price: 0,
+    available_seats: 0,
+    total_seats: 0
   });
 
-  const handleSaveBus = () => {
-    if (!newBus.name || !newBus.plateNumber) {
+  useEffect(() => {
+    fetchBuses();
+  }, []);
+
+  const fetchBuses = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('buses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBuses(data || []);
+    } catch (error) {
+      console.error('Error fetching buses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load buses",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveBus = async () => {
+    if (!newBus.name || !newBus.from_location || !newBus.to_location) {
       toast({
         title: "Missing information",
         description: "Please fill out all required fields.",
@@ -70,35 +98,71 @@ const AdminBuses = () => {
       return;
     }
 
-    if (editingBus) {
-      // Update existing bus
-      setBuses(buses.map(bus => 
-        bus.id === editingBus.id ? { ...bus, ...newBus } as BusData : bus
-      ));
+    try {
+      if (editingBus) {
+        const { error } = await supabase
+          .from('buses')
+          .update({
+            name: newBus.name,
+            from_location: newBus.from_location,
+            to_location: newBus.to_location,
+            departure_time: newBus.departure_time,
+            arrival_time: newBus.arrival_time,
+            price: newBus.price || 0,
+            available_seats: newBus.available_seats || 0,
+            total_seats: newBus.total_seats || 0
+          })
+          .eq('id', editingBus.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Bus updated",
+          description: `${newBus.name} has been updated successfully.`,
+        });
+      } else {
+        const { error } = await supabase
+          .from('buses')
+          .insert([{
+            name: newBus.name,
+            from_location: newBus.from_location,
+            to_location: newBus.to_location,
+            departure_time: newBus.departure_time,
+            arrival_time: newBus.arrival_time,
+            price: newBus.price || 0,
+            available_seats: newBus.available_seats || 0,
+            total_seats: newBus.total_seats || 0
+          }]);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Bus added",
+          description: `${newBus.name} has been added successfully.`,
+        });
+      }
       
-      toast({
-        title: "Bus updated",
-        description: `${newBus.name} has been updated successfully.`,
+      setDialogOpen(false);
+      setNewBus({
+        name: "",
+        from_location: "",
+        to_location: "",
+        departure_time: "",
+        arrival_time: "",
+        price: 0,
+        available_seats: 0,
+        total_seats: 0
       });
-    } else {
-      // Add new bus
-      const id = Date.now().toString();
-      setBuses([...buses, { id, ...newBus } as BusData]);
-      
+      setEditingBus(null);
+      await fetchBuses();
+    } catch (error) {
+      console.error('Error saving bus:', error);
       toast({
-        title: "Bus added",
-        description: `${newBus.name} has been added successfully.`,
+        title: "Error",
+        description: "Failed to save bus",
+        variant: "destructive",
       });
     }
-    
-    setDialogOpen(false);
-    setNewBus({
-      name: "",
-      plateNumber: "",
-      capacity: 45,
-      status: "active"
-    });
-    setEditingBus(null);
   };
 
   const handleEditBus = (bus: BusData) => {
@@ -107,25 +171,31 @@ const AdminBuses = () => {
     setDialogOpen(true);
   };
 
-  const handleDeleteBus = (id: string) => {
-    setBuses(buses.filter(bus => bus.id !== id));
-    
-    toast({
-      title: "Bus deleted",
-      description: "The bus has been removed successfully.",
-    });
-  };
+  const handleDeleteBus = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('buses')
+        .delete()
+        .eq('id', id);
 
-  const getStatusBadge = (status: BusData["status"]) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
-      case "maintenance":
-        return <Badge variant="outline" className="border-amber-500 text-amber-500">Maintenance</Badge>;
-      case "inactive":
-        return <Badge variant="outline" className="border-red-500 text-red-500">Inactive</Badge>;
+      if (error) throw error;
+      
+      toast({
+        title: "Bus deleted",
+        description: "The bus has been removed successfully.",
+      });
+      
+      await fetchBuses();
+    } catch (error) {
+      console.error('Error deleting bus:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete bus",
+        variant: "destructive",
+      });
     }
   };
+
 
   return (
     <DashboardLayout sidebarItems={adminSidebarItems}>
@@ -142,9 +212,13 @@ const AdminBuses = () => {
                 setEditingBus(null);
                 setNewBus({
                   name: "",
-                  plateNumber: "",
-                  capacity: 45,
-                  status: "active"
+                  from_location: "",
+                  to_location: "",
+                  departure_time: "",
+                  arrival_time: "",
+                  price: 0,
+                  available_seats: 0,
+                  total_seats: 0
                 });
               }}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -162,7 +236,7 @@ const AdminBuses = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="name" className="text-right">
-                    Name
+                    Bus Name
                   </label>
                   <Input
                     id="name"
@@ -173,50 +247,92 @@ const AdminBuses = () => {
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="plateNumber" className="text-right">
-                    Plate Number
+                  <label htmlFor="from_location" className="text-right">
+                    From
                   </label>
                   <Input
-                    id="plateNumber"
+                    id="from_location"
                     className="col-span-3"
-                    value={newBus.plateNumber}
-                    onChange={(e) => setNewBus({ ...newBus, plateNumber: e.target.value })}
+                    value={newBus.from_location}
+                    onChange={(e) => setNewBus({ ...newBus, from_location: e.target.value })}
                   />
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="capacity" className="text-right">
-                    Capacity
+                  <label htmlFor="to_location" className="text-right">
+                    To
                   </label>
                   <Input
-                    id="capacity"
+                    id="to_location"
+                    className="col-span-3"
+                    value={newBus.to_location}
+                    onChange={(e) => setNewBus({ ...newBus, to_location: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="departure_time" className="text-right">
+                    Departure Time
+                  </label>
+                  <Input
+                    id="departure_time"
+                    type="datetime-local"
+                    className="col-span-3"
+                    value={newBus.departure_time}
+                    onChange={(e) => setNewBus({ ...newBus, departure_time: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="arrival_time" className="text-right">
+                    Arrival Time
+                  </label>
+                  <Input
+                    id="arrival_time"
+                    type="datetime-local"
+                    className="col-span-3"
+                    value={newBus.arrival_time}
+                    onChange={(e) => setNewBus({ ...newBus, arrival_time: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="price" className="text-right">
+                    Price (XAF)
+                  </label>
+                  <Input
+                    id="price"
                     type="number"
                     className="col-span-3"
-                    value={newBus.capacity}
-                    onChange={(e) => setNewBus({ 
-                      ...newBus, 
-                      capacity: parseInt(e.target.value) || 0 
-                    })}
+                    value={newBus.price}
+                    onChange={(e) => setNewBus({ ...newBus, price: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="status" className="text-right">
-                    Status
+                  <label htmlFor="total_seats" className="text-right">
+                    Total Seats
                   </label>
-                  <select
-                    id="status"
-                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    value={newBus.status}
-                    onChange={(e) => setNewBus({ 
-                      ...newBus, 
-                      status: e.target.value as BusData["status"]
-                    })}
-                  >
-                    <option value="active">Active</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  <Input
+                    id="total_seats"
+                    type="number"
+                    className="col-span-3"
+                    value={newBus.total_seats}
+                    onChange={(e) => setNewBus({ ...newBus, total_seats: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="available_seats" className="text-right">
+                    Available Seats
+                  </label>
+                  <Input
+                    id="available_seats"
+                    type="number"
+                    className="col-span-3"
+                    value={newBus.available_seats}
+                    onChange={(e) => setNewBus({ ...newBus, available_seats: parseInt(e.target.value) || 0 })}
+                  />
                 </div>
               </div>
               
@@ -237,50 +353,64 @@ const AdminBuses = () => {
             />
           </div>
           
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Plate Number</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {buses.map((bus) => (
-                <TableRow key={bus.id}>
-                  <TableCell className="font-medium">{bus.name}</TableCell>
-                  <TableCell>{bus.plateNumber}</TableCell>
-                  <TableCell>{bus.capacity} seats</TableCell>
-                  <TableCell>{getStatusBadge(bus.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditBus(bus)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteBus(bus.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-pulse">Loading buses...</div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bus Name</TableHead>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Departure</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Seats</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {buses.map((bus) => (
+                  <TableRow key={bus.id}>
+                    <TableCell className="font-medium">{bus.name}</TableCell>
+                    <TableCell>{bus.from_location} → {bus.to_location}</TableCell>
+                    <TableCell>{new Date(bus.departure_time).toLocaleString()}</TableCell>
+                    <TableCell>{bus.price?.toLocaleString()} XAF</TableCell>
+                    <TableCell>{bus.available_seats}/{bus.total_seats}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditBus(bus)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteBus(bus.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          {!loading && buses.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground">
+              No buses found. Add your first bus to get started.
+            </div>
+          )}
         </Card>
       </div>
     </DashboardLayout>

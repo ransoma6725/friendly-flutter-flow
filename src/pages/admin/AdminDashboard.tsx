@@ -152,7 +152,7 @@ const AdminDashboard = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalRevenue}</div>
+              <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} XAF</div>
               <p className="text-xs text-muted-foreground">
                 Total earnings
               </p>
