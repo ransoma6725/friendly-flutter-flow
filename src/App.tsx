@@ -13,9 +13,6 @@ import AdminBookings from "@/pages/admin/AdminBookings";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminPackages from "@/pages/admin/AdminPackages";
 import AdminSchedules from "@/pages/admin/AdminSchedules";
-import UserDashboard from "@/pages/user/UserDashboard";
-import UserBookings from "@/pages/user/UserBookings";
-import UserParcelTracking from "@/pages/user/UserParcelTracking";
 import AdminRoute from "@/components/AdminRoute";
 import UserRoute from "@/components/UserRoute";
 import { AdminProvider } from "@/contexts/AdminContext";
@@ -46,9 +43,6 @@ function App() {
               <Route path="/admin/schedules" element={<AdminRoute><AdminSchedules /></AdminRoute>} />
 
               {/* User Routes - only accessible when authenticated as user */}
-              <Route path="/user" element={<UserRoute><UserDashboard /></UserRoute>} />
-              <Route path="/user/bookings" element={<UserRoute><UserBookings /></UserRoute>} />
-              <Route path="/user/tracking" element={<UserRoute><UserParcelTracking /></UserRoute>} />
               <Route path="/profile" element={<UserRoute><div>User Profile</div></UserRoute>} />
             </Routes>
           </BookingProvider>
