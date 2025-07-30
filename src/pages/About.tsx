@@ -23,8 +23,8 @@ const About = () => {
             <CardContent className="p-6">
               <h2 className="text-2xl font-semibold mb-4">Our Story</h2>
               <p className="text-muted-foreground mb-4">
-                CamBus was established in 2025 with the mission to revolutionize intercity 
-                transportation in Cameroon. What started as a small ticketing agency in Buea 
+                CamBus was established in 2022 with the mission to revolutionize intercity 
+                transportation in Cameroon. What started as a small ticketing agency in Yaoundé 
                 has now grown to become Cameroon's leading digital platform for bus ticket 
                 reservations, connecting passengers to major cities across the country.
               </p>
@@ -46,7 +46,7 @@ const About = () => {
                     <MapPin className="h-5 w-5 text-primary mt-0.5" />
                     <div>
                       <h3 className="font-medium">Head Office</h3>
-                      <p className="text-muted-foreground">123 Central Avenue, Buea, Cameroon</p>
+                      <p className="text-muted-foreground">123 Central Avenue, Yaoundé, Cameroon</p>
                     </div>
                   </div>
                   
@@ -54,7 +54,7 @@ const About = () => {
                     <Phone className="h-5 w-5 text-primary mt-0.5" />
                     <div>
                       <h3 className="font-medium">Phone</h3>
-                      <p className="text-muted-foreground">+237659942442</p>
+                      <p className="text-muted-foreground">+237 233 123 456</p>
                     </div>
                   </div>
                   
