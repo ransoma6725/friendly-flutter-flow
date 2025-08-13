@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,114 +22,134 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { userSidebarItems } from "@/constants/sidebarItems";
+import { supabase } from "@/integrations/supabase/client";
 
-interface Booking {
+interface BookingWithDetails {
   id: string;
-  date: string;
-  busName: string;
-  route: string;
-  departureTime: string;
-  arrivalTime: string;
-  seats: string[];
-  price: number;
-  status: "upcoming" | "completed" | "cancelled";
+  booking_date: string;
+  departure_date: string;
+  total_price: number;
+  payment_confirmed: boolean;
+  bus: {
+    name: string;
+    from_location: string;
+    to_location: string;
+    departure_time: string;
+    arrival_time: string;
+  };
+  booking_seats: {
+    seat: {
+      number: string;
+    };
+  }[];
 }
-
-const initialBookings: Booking[] = [
-  {
-    id: "BK-001",
-    date: "2025-05-25",
-    busName: "Camair Express",
-    route: "Douala → Yaoundé",
-    departureTime: "07:30",
-    arrivalTime: "10:45",
-    seats: ["A4", "A5"],
-    price: 10000,
-    status: "upcoming"
-  },
-  {
-    id: "BK-002",
-    date: "2025-05-10",
-    busName: "Garanti Express",
-    route: "Yaoundé → Bamenda",
-    departureTime: "09:00",
-    arrivalTime: "15:30",
-    seats: ["B12"],
-    price: 7500,
-    status: "completed"
-  },
-  {
-    id: "BK-003",
-    date: "2025-04-18",
-    busName: "Cardinal Express",
-    route: "Douala → Limbe",
-    departureTime: "12:15",
-    arrivalTime: "13:45",
-    seats: ["C7"],
-    price: 2000,
-    status: "completed"
-  },
-  {
-    id: "BK-004",
-    date: "2025-04-02",
-    busName: "Moghamo Express",
-    route: "Bamenda → Buea",
-    departureTime: "06:00",
-    arrivalTime: "12:30",
-    seats: ["D9", "D10"],
-    price: 11000,
-    status: "cancelled"
-  },
-  {
-    id: "BK-005",
-    date: "2025-05-30",
-    busName: "Touristique Express",
-    route: "Douala → Bafoussam",
-    departureTime: "08:45",
-    arrivalTime: "13:20",
-    seats: ["E3"],
-    price: 6000,
-    status: "upcoming"
-  }
-];
 
 const UserBookings = () => {
   const { toast } = useToast();
-  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          booking_date,
+          departure_date,
+          total_price,
+          payment_confirmed,
+          bus:buses (
+            name,
+            from_location,
+            to_location,
+            departure_time,
+            arrival_time
+          ),
+          booking_seats (
+            seat:seats (
+              number
+            )
+          )
+        `)
+        .order('booking_date', { ascending: false });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load bookings",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredBookings = bookings
-    .filter(booking => 
-      filterStatus === "all" || booking.status === filterStatus
-    )
+    .filter(booking => {
+      if (filterStatus === "all") return true;
+      if (filterStatus === "confirmed") return booking.payment_confirmed;
+      if (filterStatus === "pending") return !booking.payment_confirmed;
+      return true;
+    })
     .filter(booking =>
-      booking.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.busName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bus.from_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bus.to_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  const handleCancelBooking = (id: string) => {
-    setBookings(bookings.map(booking => 
-      booking.id === id ? { ...booking, status: "cancelled" as const } : booking
-    ));
+  const getStatusBadge = (payment_confirmed: boolean, departure_date: string) => {
+    const now = new Date();
+    const departureTime = new Date(departure_date);
     
-    toast({
-      title: "Booking cancelled",
-      description: `Booking ${id} has been cancelled.`,
+    if (!payment_confirmed) {
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Pending Payment</Badge>;
+    }
+    
+    if (departureTime < now) {
+      return <Badge className="bg-green-500">Completed</Badge>;
+    }
+    
+    return <Badge className="bg-blue-500">Upcoming</Badge>;
+  };
+
+  const formatTime = (datetime: string) => {
+    return new Date(datetime).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
-  
-  const getStatusBadge = (status: Booking["status"]) => {
-    switch (status) {
-      case "upcoming":
-        return <Badge className="bg-blue-500">Upcoming</Badge>;
-      case "completed":
-        return <Badge className="bg-green-500">Completed</Badge>;
-      case "cancelled":
-        return <Badge variant="outline" className="border-red-500 text-red-500">Cancelled</Badge>;
-    }
+
+  const formatDate = (datetime: string) => {
+    return new Date(datetime).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout sidebarItems={userSidebarItems}>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading your bookings...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout sidebarItems={userSidebarItems}>
@@ -162,9 +181,8 @@ const UserBookings = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Bookings</SelectItem>
-                  <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="pending">Pending Payment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -180,41 +198,33 @@ const UserBookings = () => {
                     <TableHead>Seats</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
-                      <TableCell className="font-medium">{booking.id}</TableCell>
-                      <TableCell>{booking.date}</TableCell>
+                      <TableCell className="font-medium">{booking.id.slice(0, 8)}</TableCell>
+                      <TableCell>{formatDate(booking.departure_date)}</TableCell>
                       <TableCell>
-                        <div>{booking.route}</div>
-                        <div className="text-xs text-muted-foreground">{booking.busName}</div>
+                        <div>{booking.bus.from_location} → {booking.bus.to_location}</div>
+                        <div className="text-xs text-muted-foreground">{booking.bus.name}</div>
                       </TableCell>
                       <TableCell>
-                        <div>{booking.departureTime}</div>
-                        <div className="text-xs text-muted-foreground">→ {booking.arrivalTime}</div>
+                        <div>{formatTime(booking.bus.departure_time)}</div>
+                        <div className="text-xs text-muted-foreground">→ {formatTime(booking.bus.arrival_time)}</div>
                       </TableCell>
-                      <TableCell>{booking.seats.join(", ")}</TableCell>
-                      <TableCell>{booking.price.toLocaleString()} XAF</TableCell>
-                      <TableCell>{getStatusBadge(booking.status)}</TableCell>
                       <TableCell>
-                        {booking.status === "upcoming" && (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleCancelBooking(booking.id)}
-                          >
-                            Cancel
-                          </Button>
-                        )}
+                        {booking.booking_seats.map(bs => bs.seat.number).join(", ")}
+                      </TableCell>
+                      <TableCell>{booking.total_price.toLocaleString()} XAF</TableCell>
+                      <TableCell>
+                        {getStatusBadge(booking.payment_confirmed, booking.departure_date)}
                       </TableCell>
                     </TableRow>
                   ))}
                   {filteredBookings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <Calendar className="h-8 w-8 mb-2" />
                           <p>No bookings found</p>
