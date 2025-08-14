@@ -42,12 +42,27 @@ const BookingSection = ({
   onSignOut,
   setStep,
 }: BookingSectionProps) => {
+  
+  const handleStepClick = (targetStep: AppState) => {
+    // Only allow navigation to previous steps or next enabled step
+    if (targetStep === "buses") {
+      setStep("buses");
+    } else if (targetStep === "seats" && selectedBus) {
+      setStep("seats");
+    } else if (targetStep === "payment" && selectedBus && selectedSeatIds.length > 0) {
+      setStep("payment");
+    }
+  };
+
   return (
     <BookingSteps
       step={step}
       title={title}
       description={description}
       progressPercentage={progressPercentage}
+      onStepClick={handleStepClick}
+      selectedBus={selectedBus}
+      selectedSeatIds={selectedSeatIds}
     >
       {step === "buses" && (
         <BusList buses={buses} onSelectBus={onSelectBus} />

@@ -32,6 +32,28 @@ const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDeta
     }, 2000);
   };
 
+  const getPaymentInstructions = () => {
+    if (paymentMethod === "mtn") {
+      return [
+        "Dial *126# on your phone",
+        "Select \"Send Money\"",
+        `Enter the number: ${mtnNumber}`,
+        `Enter amount: ${(selectedSeatIds.length * bus.price).toLocaleString()} XAF`,
+        "Enter your PIN to confirm",
+        "Click \"Complete Payment\" below once done"
+      ];
+    } else {
+      return [
+        "Dial #150# on your phone",
+        "Select \"Send Money\"",
+        `Enter the number: ${orangeNumber}`,
+        `Enter amount: ${(selectedSeatIds.length * bus.price).toLocaleString()} XAF`,
+        "Enter your PIN to confirm",
+        "Click \"Complete Payment\" below once done"
+      ];
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-lg p-4">
@@ -105,29 +127,33 @@ const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDeta
           </h4>
           
           <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>Dial *126# on your phone</li>
-            <li>Select "Send Money"</li>
-            <li>Enter the number: 
-              <span className="ml-1 font-medium">
-                {paymentMethod === "mtn" ? mtnNumber : orangeNumber}
-                <button 
-                  onClick={() => handleCopyNumber(
-                    paymentMethod === "mtn" ? mtnNumber : orangeNumber,
-                    paymentMethod === "mtn" ? "MTN" : "Orange"
-                  )}
-                  className="ml-2 inline-flex items-center text-primary hover:text-primary/80"
-                >
-                  {copied === (paymentMethod === "mtn" ? "MTN" : "Orange") ? (
-                    <CheckIcon className="h-4 w-4" />
-                  ) : (
-                    <CopyIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </span>
-            </li>
-            <li>Enter amount: {(selectedSeatIds.length * bus.price).toLocaleString()} XAF</li>
-            <li>Enter your PIN to confirm</li>
-            <li>Click "Complete Payment" below once done</li>
+            {getPaymentInstructions().map((instruction, index) => (
+              <li key={index}>
+                {index === 2 ? (
+                  <>
+                    Enter the number: 
+                    <span className="ml-1 font-medium">
+                      {paymentMethod === "mtn" ? mtnNumber : orangeNumber}
+                      <button 
+                        onClick={() => handleCopyNumber(
+                          paymentMethod === "mtn" ? mtnNumber : orangeNumber,
+                          paymentMethod === "mtn" ? "MTN" : "Orange"
+                        )}
+                        className="ml-2 inline-flex items-center text-primary hover:text-primary/80"
+                      >
+                        {copied === (paymentMethod === "mtn" ? "MTN" : "Orange") ? (
+                          <CheckIcon className="h-4 w-4" />
+                        ) : (
+                          <CopyIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    </span>
+                  </>
+                ) : (
+                  instruction
+                )}
+              </li>
+            ))}
           </ol>
         </div>
         

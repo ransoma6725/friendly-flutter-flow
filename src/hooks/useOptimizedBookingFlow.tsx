@@ -66,6 +66,7 @@ export const useOptimizedBookingFlow = () => {
 
   const handleSelectBus = useCallback((bus: Bus) => {
     setSelectedBus(bus);
+    setSelectedSeatIds([]); // Clear previous seat selection
     setStep("seats");
     toast({
       title: "Bus selected",
@@ -95,18 +96,24 @@ export const useOptimizedBookingFlow = () => {
       });
       
       setCurrentBookingId(bookingId);
+      
+      // Mark seats as booked
+      const bookedSeats = JSON.parse(localStorage.getItem(`bus_${selectedBus.id}_booked_seats`) || '[]');
+      const newBookedSeats = [...bookedSeats, ...selectedSeatIds];
+      localStorage.setItem(`bus_${selectedBus.id}_booked_seats`, JSON.stringify(newBookedSeats));
     }
   
     setStep("confirmation");
     toast({
-      title: "Payment initiated",
-      description: "Your booking has been recorded! Awaiting payment confirmation.",
+      title: "Payment completed",
+      description: "Your booking has been confirmed! Your seats are now reserved.",
     });
   }, [currentUser, selectedBus, selectedSeatIds, addBooking, toast]);
 
   const handleNewBooking = useCallback(() => {
     setSelectedBus(null);
     setSelectedSeatIds([]);
+    setCurrentBookingId(null);
     setStep("buses");
   }, []);
 
@@ -114,6 +121,7 @@ export const useOptimizedBookingFlow = () => {
     await signOut();
     setSelectedBus(null);
     setSelectedSeatIds([]);
+    setCurrentBookingId(null);
     setStep("auth");
     navigate("/");
     
@@ -126,6 +134,7 @@ export const useOptimizedBookingFlow = () => {
   const handleGoHome = useCallback(() => {
     setSelectedBus(null);
     setSelectedSeatIds([]);
+    setCurrentBookingId(null);
     setStep("auth");
     navigate("/");
   }, [navigate]);

@@ -7,6 +7,7 @@ import BookingSection from "@/components/booking/BookingSection";
 import PageHeader from "@/components/layout/PageHeader";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import SystemStatus from "@/components/SystemStatus";
 
 const Index = () => {
   const {
@@ -42,18 +43,14 @@ const Index = () => {
     );
   }
 
-  // Redirect to auth if not signed in and not on auth step
-  if (!isSignedIn && !isAuthStep(step)) {
-    setStep("auth");
-  }
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen p-2 md:p-4 bg-hero-pattern">
         <div className="max-w-4xl mx-auto py-4 md:py-6">
           <PageHeader />
+          <SystemStatus />
 
-          {isAuthStep(step) ? (
+          {isAuthStep(step) || !isSignedIn ? (
             <AuthSection
               step={step}
               title={title}

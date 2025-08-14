@@ -1,7 +1,7 @@
 
 import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import BookingProgress from "@/components/BookingProgress";
+import ClickableBookingProgress from "@/components/ClickableBookingProgress";
 import { AppState } from "@/utils/stepHelpers";
 
 interface BookingStepsProps {
@@ -11,6 +11,9 @@ interface BookingStepsProps {
   progressPercentage: number;
   children: ReactNode;
   showProgress?: boolean;
+  onStepClick: (step: AppState) => void;
+  selectedBus: any;
+  selectedSeatIds: string[];
 }
 
 const BookingSteps = ({ 
@@ -19,12 +22,21 @@ const BookingSteps = ({
   description, 
   progressPercentage, 
   children,
-  showProgress = true
+  showProgress = true,
+  onStepClick,
+  selectedBus,
+  selectedSeatIds
 }: BookingStepsProps) => {
   return (
     <>
       {showProgress && !["auth", "signup", "forgot-password"].includes(step) && (
-        <BookingProgress currentStep={step} progressPercentage={progressPercentage} />
+        <ClickableBookingProgress 
+          currentStep={step} 
+          progressPercentage={progressPercentage}
+          onStepClick={onStepClick}
+          selectedBus={selectedBus}
+          selectedSeatIds={selectedSeatIds}
+        />
       )}
       
       <Card className="shadow-lg border-t-4 border-t-primary">

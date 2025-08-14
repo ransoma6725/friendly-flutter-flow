@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bus, Seat } from "@/types";
-import { generateSeats } from "@/services/mockData";
+import { Bus } from "@/types";
+import { useSeatManagement } from "@/hooks/useSeatManagement";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,32 +14,25 @@ interface SeatSelectionProps {
 }
 
 const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const { toast } = useToast();
+  const {
+    seats,
+    toggleSeatSelection,
+    getSelectedSeats,
+    clearSelection
+  } = useSeatManagement({
+    busId: bus.id,
+    totalSeats: bus.totalSeats
+  });
 
-  useEffect(() => {
-    // In a real app, fetch seats from API
-    const busSeats = generateSeats(bus.id, bus.totalSeats);
-    setSeats(busSeats);
-  }, [bus]);
+  const selectedSeats = getSelectedSeats();
+  const selectedSeatIds = selectedSeats.map(seat => seat.id);
 
-  const handleSeatClick = (seat: Seat) => {
-    if (seat.isBooked) return;
-
-    setSeats(seats.map(s => 
-      s.id === seat.id 
-        ? { ...s, isSelected: !s.isSelected } 
-        : s
-    ));
-
-    setSelectedSeatIds(prev => {
-      if (prev.includes(seat.id)) {
-        return prev.filter(id => id !== seat.id);
-      } else {
-        return [...prev, seat.id];
-      }
-    });
+  const handleSeatClick = (seatId: string) => {
+    const seat = seats.find(s => s.id === seatId);
+    if (seat && !seat.isBooked) {
+      toggleSeatSelection(seatId);
+    }
   };
 
   const handleBooking = () => {
@@ -57,12 +50,11 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
 
   // Group seats by row for better visual arrangement
   const seatsByRow = seats.reduce((acc, seat) => {
-    // Extract row number from seat number (e.g., "1" from "1A")
     const rowNum = seat.number.slice(0, -1);
     if (!acc[rowNum]) acc[rowNum] = [];
     acc[rowNum].push(seat);
     return acc;
-  }, {} as Record<string, Seat[]>);
+  }, {} as Record<string, typeof seats>);
 
   return (
     <div className="space-y-6">
@@ -107,21 +99,19 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
 
       <div className="flex justify-center mb-6">
         <div className="w-full max-w-sm space-y-4">
-          {/* Bus front visualization */}
           <div className="flex justify-center mb-2">
             <div className="w-24 h-8 bg-accent/50 rounded-t-full flex items-center justify-center text-xs font-medium">
               Driver
             </div>
           </div>
         
-          {/* Seat grid by rows */}
           <div className="space-y-2">
             {Object.entries(seatsByRow).map(([rowNum, rowSeats]) => (
               <div key={rowNum} className="grid grid-cols-4 gap-2">
                 {rowSeats.map(seat => (
                   <div
                     key={seat.id}
-                    onClick={() => handleSeatClick(seat)}
+                    onClick={() => handleSeatClick(seat.id)}
                     className={`
                       flex items-center justify-center p-2 rounded-md cursor-pointer text-xs font-medium
                       relative transition-all duration-200 ease-in-out transform hover:scale-105
@@ -149,22 +139,26 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
         <div className="flex justify-between mb-2 text-sm">
           <span>Selected Seats:</span>
           <span className="font-medium">
-            {selectedSeatIds.length > 0 
-              ? seats
-                  .filter(s => selectedSeatIds.includes(s.id))
-                  .map(s => s.number)
-                  .join(", ")
+            {selectedSeats.length > 0 
+              ? selectedSeats.map(s => s.number).join(", ")
               : "None"}
           </span>
         </div>
         <div className="flex justify-between mb-4">
           <span>Total Price:</span>
-          <span className="font-bold text-lg">{(selectedSeatIds.length * bus.price).toLocaleString()} XAF</span>
+          <span className="font-bold text-lg">{(selectedSeats.length * bus.price).toLocaleString()} XAF</span>
         </div>
         
-        <Button onClick={handleBooking} className="w-full gap-1.5" disabled={selectedSeatIds.length === 0}>
-          Continue to Payment
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleBooking} className="flex-1 gap-1.5" disabled={selectedSeats.length === 0}>
+            Continue to Payment
+          </Button>
+          {selectedSeats.length > 0 && (
+            <Button variant="outline" onClick={clearSelection}>
+              Clear Selection
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
