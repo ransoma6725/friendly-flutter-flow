@@ -25,22 +25,20 @@ const AdminLogin = () => {
     try {
       console.log("Attempting admin login with:", email);
       
-      // Check credentials directly against admin_users table
-      const { data: adminUsers, error: adminError } = await supabase
-        .from('admin_users')
-        .select('email, password')
-        .eq('email', email)
-        .eq('password', password);
+      // Use secure edge function for admin authentication
+      const { data, error } = await supabase.functions.invoke('admin-auth', {
+        body: { email, password }
+      });
 
-      console.log("Admin query result:", { adminUsers, adminError });
+      console.log("Admin auth result:", { data, error });
 
-      if (adminError) {
-        console.error("Admin query error:", adminError);
-        throw new Error('Database error occurred. Please try again.');
+      if (error) {
+        console.error("Admin auth error:", error);
+        throw new Error('Authentication failed. Please try again.');
       }
 
-      if (!adminUsers || adminUsers.length === 0) {
-        console.error("No admin user found with provided credentials");
+      if (!data?.success) {
+        console.error("Invalid admin credentials");
         throw new Error('Invalid admin credentials. Please check your email and password.');
       }
 
