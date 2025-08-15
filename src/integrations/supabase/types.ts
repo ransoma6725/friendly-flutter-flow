@@ -19,19 +19,19 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          password: string
+          password_hash: string
         }
         Insert: {
           created_at?: string
           email: string
           id: string
-          password: string
+          password_hash: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
-          password?: string
+          password_hash?: string
         }
         Relationships: []
       }
@@ -221,12 +221,20 @@ export type Database = {
           email: string
         }[]
       }
+      hash_password: {
+        Args: { raw_password: string }
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_seat_available: {
         Args: { seat_id: string }
+        Returns: boolean
+      }
+      verify_password: {
+        Args: { raw_password: string; stored_hash: string }
         Returns: boolean
       }
     }
