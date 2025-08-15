@@ -43,6 +43,9 @@ const Index = () => {
     );
   }
 
+  // Always show auth section if user is not signed in, regardless of step
+  const shouldShowAuth = !isSignedIn || isAuthStep(step);
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen p-2 md:p-4 bg-hero-pattern">
@@ -50,7 +53,7 @@ const Index = () => {
           <PageHeader />
           <SystemStatus />
 
-          {isAuthStep(step) || !isSignedIn ? (
+          {shouldShowAuth ? (
             <AuthSection
               step={step}
               title={title}
