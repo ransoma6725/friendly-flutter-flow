@@ -1,11 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bus } from "@/types";
 import { useSeatManagement } from "@/hooks/useSeatManagement";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import SeatGrid from "@/components/seats/SeatGrid";
+import SeatLegend from "@/components/seats/SeatLegend";
+import BookingSummary from "@/components/seats/BookingSummary";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface SeatSelectionProps {
   bus: Bus;
@@ -17,6 +21,7 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
   const { toast } = useToast();
   const {
     seats,
+    isLoading,
     toggleSeatSelection,
     getSelectedSeats,
     clearSelection
@@ -48,13 +53,13 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
     onBookSeats(selectedSeatIds);
   };
 
-  // Group seats by row for better visual arrangement
-  const seatsByRow = seats.reduce((acc, seat) => {
-    const rowNum = seat.number.slice(0, -1);
-    if (!acc[rowNum]) acc[rowNum] = [];
-    acc[rowNum].push(seat);
-    return acc;
-  }, {} as Record<string, typeof seats>);
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -80,86 +85,16 @@ const SeatSelection = ({ bus, onBookSeats, onBack }: SeatSelectionProps) => {
         </p>
       </div>
       
-      <div className="flex justify-center mb-6">
-        <div className="bg-muted p-3 rounded-lg text-sm flex gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-white border border-gray-300 rounded-sm"></div>
-            <span>Available</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary rounded-sm"></div>
-            <span>Selected</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-            <span>Booked</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-center mb-6">
-        <div className="w-full max-w-sm space-y-4">
-          <div className="flex justify-center mb-2">
-            <div className="w-24 h-8 bg-accent/50 rounded-t-full flex items-center justify-center text-xs font-medium">
-              Driver
-            </div>
-          </div>
-        
-          <div className="space-y-2">
-            {Object.entries(seatsByRow).map(([rowNum, rowSeats]) => (
-              <div key={rowNum} className="grid grid-cols-4 gap-2">
-                {rowSeats.map(seat => (
-                  <div
-                    key={seat.id}
-                    onClick={() => handleSeatClick(seat.id)}
-                    className={`
-                      flex items-center justify-center p-2 rounded-md cursor-pointer text-xs font-medium
-                      relative transition-all duration-200 ease-in-out transform hover:scale-105
-                      ${seat.isBooked
-                        ? 'bg-gray-400 text-gray-100 cursor-not-allowed opacity-70'
-                        : seat.isSelected
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'bg-white border border-gray-300 hover:border-primary hover:shadow-sm'
-                      }
-                    `}
-                  >
-                    {seat.number}
-                    {seat.isSelected && (
-                      <Check className="absolute top-0 right-0 h-3 w-3 mt-0.5 mr-0.5" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <SeatLegend />
+      <SeatGrid seats={seats} onSeatClick={handleSeatClick} />
       
-      <div className="border-t pt-4">
-        <div className="flex justify-between mb-2 text-sm">
-          <span>Selected Seats:</span>
-          <span className="font-medium">
-            {selectedSeats.length > 0 
-              ? selectedSeats.map(s => s.number).join(", ")
-              : "None"}
-          </span>
-        </div>
-        <div className="flex justify-between mb-4">
-          <span>Total Price:</span>
-          <span className="font-bold text-lg">{(selectedSeats.length * bus.price).toLocaleString()} XAF</span>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button onClick={handleBooking} className="flex-1 gap-1.5" disabled={selectedSeats.length === 0}>
-            Continue to Payment
-          </Button>
-          {selectedSeats.length > 0 && (
-            <Button variant="outline" onClick={clearSelection}>
-              Clear Selection
-            </Button>
-          )}
-        </div>
-      </div>
+      <BookingSummary 
+        selectedSeats={selectedSeats}
+        pricePerSeat={bus.price}
+        onBook={handleBooking}
+        onClearSelection={clearSelection}
+        isBookingDisabled={selectedSeats.length === 0}
+      />
     </div>
   );
 };

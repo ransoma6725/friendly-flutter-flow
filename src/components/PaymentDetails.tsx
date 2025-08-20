@@ -41,7 +41,7 @@ const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDeta
         return;
       }
 
-      // Create booking in database
+      // Create booking in database (this will also book the seats automatically)
       await addBooking({
         userId: user.id,
         userName: user.user_metadata?.name || user.email || 'Unknown User',
@@ -51,11 +51,6 @@ const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDeta
         totalAmount: totalPrice,
         departureDate: new Date().toISOString().split('T')[0], // Today's date for demo
       });
-
-      // Mark seats as booked in localStorage (for local seat management)
-      const currentBookedSeats = JSON.parse(localStorage.getItem(`bus_${bus.id}_booked_seats`) || '[]');
-      const updatedBookedSeats = [...currentBookedSeats, ...selectedSeatIds];
-      localStorage.setItem(`bus_${bus.id}_booked_seats`, JSON.stringify(updatedBookedSeats));
 
       toast({
         title: "Booking created successfully",

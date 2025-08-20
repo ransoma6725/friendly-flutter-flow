@@ -264,6 +264,10 @@ export type Database = {
         Args: { seat_id: string }
         Returns: boolean
       }
+      mark_random_seats_as_booked: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       verify_password: {
         Args: { raw_password: string; stored_hash: string }
         Returns: boolean

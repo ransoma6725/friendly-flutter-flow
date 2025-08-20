@@ -4,6 +4,7 @@ import { useBookings } from "@/contexts/BookingContext";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { SeatService } from "@/services/seatService";
 
 interface BookingManagementProps {
   userId: string;
@@ -14,16 +15,23 @@ const BookingManagement = ({ userId }: BookingManagementProps) => {
   const { toast } = useToast();
   const userBookings = getUserBookings(userId);
 
-  const handleCancelBooking = (bookingId: string, busId: string, seatIds: string[]) => {
-    // Remove seats from booked seats in localStorage
-    const currentBookedSeats = JSON.parse(localStorage.getItem(`bus_${busId}_booked_seats`) || '[]');
-    const updatedBookedSeats = currentBookedSeats.filter((seatId: string) => !seatIds.includes(seatId));
-    localStorage.setItem(`bus_${busId}_booked_seats`, JSON.stringify(updatedBookedSeats));
-    
-    toast({
-      title: "Booking cancelled",
-      description: "Your seats have been released and are now available for booking.",
-    });
+  const handleCancelBooking = async (bookingId: string, busId: string, seatIds: string[]) => {
+    try {
+      // Cancel seats in the database
+      await SeatService.cancelSeatBooking(seatIds);
+      
+      toast({
+        title: "Booking cancelled",
+        description: "Your seats have been released and are now available for booking.",
+      });
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking",
+        variant: "destructive",
+      });
+    }
   };
 
   if (userBookings.length === 0) {

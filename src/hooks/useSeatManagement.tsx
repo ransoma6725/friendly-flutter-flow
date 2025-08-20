@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Seat } from "@/types";
+import { SeatService } from "@/services/seatService";
+import { useToast } from "@/hooks/use-toast";
 
 interface UseSeatManagementProps {
   busId: string;
@@ -9,78 +11,82 @@ interface UseSeatManagementProps {
 
 export const useSeatManagement = ({ busId, totalSeats }: UseSeatManagementProps) => {
   const [seats, setSeats] = useState<Seat[]>([]);
-  const [bookedSeats, setBookedSeats] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Load booked seats from localStorage
+  // Load seats from Supabase
   useEffect(() => {
-    const savedBookings = localStorage.getItem(`bus_${busId}_booked_seats`);
-    if (savedBookings) {
-      const parsed = JSON.parse(savedBookings);
-      setBookedSeats(new Set(parsed));
-    }
-  }, [busId]);
-
-  // Generate seats with booking status
-  useEffect(() => {
-    const generateSeats = () => {
-      const seatList: Seat[] = [];
-      const rows = Math.ceil(totalSeats / 4);
-      
-      for (let row = 1; row <= rows; row++) {
-        const seatsInRow = Math.min(4, totalSeats - (row - 1) * 4);
-        const seatLetters = ['A', 'B', 'C', 'D'];
+    const loadSeats = async () => {
+      try {
+        setIsLoading(true);
+        const seatsData = await SeatService.getSeatsForBus(busId);
         
-        for (let seatIndex = 0; seatIndex < seatsInRow; seatIndex++) {
-          const seatNumber = `${row}${seatLetters[seatIndex]}`;
-          const seatId = `${busId}-${seatNumber}`;
-          
-          seatList.push({
-            id: seatId,
-            number: seatNumber,
-            isBooked: bookedSeats.has(seatId),
-            isSelected: false
-          });
+        // If no seats exist, create them
+        if (seatsData.length === 0) {
+          await SeatService.createSeatsForBus(busId, totalSeats);
+          const newSeatsData = await SeatService.getSeatsForBus(busId);
+          setSeats(newSeatsData);
+        } else {
+          setSeats(seatsData);
         }
+      } catch (error) {
+        console.error('Error loading seats:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load seat information",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-      
-      return seatList;
     };
 
-    setSeats(generateSeats());
-  }, [busId, totalSeats, bookedSeats]);
+    loadSeats();
+  }, [busId, totalSeats, toast]);
 
-  const bookSeats = (seatIds: string[]) => {
-    const newBookedSeats = new Set([...bookedSeats, ...seatIds]);
-    setBookedSeats(newBookedSeats);
-    
-    // Save to localStorage
-    localStorage.setItem(`bus_${busId}_booked_seats`, JSON.stringify([...newBookedSeats]));
-    
-    // Update seats state
-    setSeats(prevSeats => 
-      prevSeats.map(seat => ({
-        ...seat,
-        isBooked: newBookedSeats.has(seat.id),
-        isSelected: false
-      }))
-    );
+  const bookSeats = async (seatIds: string[]) => {
+    try {
+      await SeatService.bookSeats(seatIds);
+      
+      // Update local state
+      setSeats(prevSeats => 
+        prevSeats.map(seat => ({
+          ...seat,
+          isBooked: seatIds.includes(seat.id) ? true : seat.isBooked,
+          isSelected: false
+        }))
+      );
+    } catch (error) {
+      console.error('Error booking seats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to book seats",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
-  const cancelSeatBooking = (seatIds: string[]) => {
-    const newBookedSeats = new Set(bookedSeats);
-    seatIds.forEach(seatId => newBookedSeats.delete(seatId));
-    setBookedSeats(newBookedSeats);
-    
-    // Save to localStorage
-    localStorage.setItem(`bus_${busId}_booked_seats`, JSON.stringify([...newBookedSeats]));
-    
-    // Update seats state
-    setSeats(prevSeats => 
-      prevSeats.map(seat => ({
-        ...seat,
-        isBooked: newBookedSeats.has(seat.id)
-      }))
-    );
+  const cancelSeatBooking = async (seatIds: string[]) => {
+    try {
+      await SeatService.cancelSeatBooking(seatIds);
+      
+      // Update local state
+      setSeats(prevSeats => 
+        prevSeats.map(seat => ({
+          ...seat,
+          isBooked: seatIds.includes(seat.id) ? false : seat.isBooked
+        }))
+      );
+    } catch (error) {
+      console.error('Error cancelling seat booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel seat booking",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const toggleSeatSelection = (seatId: string) => {
@@ -105,6 +111,7 @@ export const useSeatManagement = ({ busId, totalSeats }: UseSeatManagementProps)
 
   return {
     seats,
+    isLoading,
     bookSeats,
     cancelSeatBooking,
     toggleSeatSelection,

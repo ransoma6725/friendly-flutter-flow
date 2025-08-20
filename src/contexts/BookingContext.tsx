@@ -1,8 +1,8 @@
-
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { Bus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SeatService } from "@/services/seatService";
 
 // Define the structure of a booking
 export interface Booking {
@@ -87,6 +87,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const addBooking = async (newBooking: Omit<Booking, "id" | "bookingDate" | "paymentConfirmed">): Promise<string> => {
     try {
+      // First, book the seats in the database
+      await SeatService.bookSeats(newBooking.seatIds);
+
       const { data, error } = await supabase
         .from('bookings')
         .insert({
