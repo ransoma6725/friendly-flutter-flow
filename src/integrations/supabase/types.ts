@@ -70,31 +70,58 @@ export type Database = {
       }
       bookings: {
         Row: {
+          arrival_time: string | null
           booking_date: string
           bus_id: string
+          bus_name: string | null
           departure_date: string
+          departure_time: string | null
+          from_location: string | null
           id: string
           payment_confirmed: boolean | null
+          seat_numbers: string[] | null
+          status: string | null
+          to_location: string | null
           total_price: number
+          user_email: string | null
           user_id: string
+          user_name: string | null
         }
         Insert: {
+          arrival_time?: string | null
           booking_date?: string
           bus_id: string
+          bus_name?: string | null
           departure_date: string
+          departure_time?: string | null
+          from_location?: string | null
           id?: string
           payment_confirmed?: boolean | null
+          seat_numbers?: string[] | null
+          status?: string | null
+          to_location?: string | null
           total_price: number
+          user_email?: string | null
           user_id: string
+          user_name?: string | null
         }
         Update: {
+          arrival_time?: string | null
           booking_date?: string
           bus_id?: string
+          bus_name?: string | null
           departure_date?: string
+          departure_time?: string | null
+          from_location?: string | null
           id?: string
           payment_confirmed?: boolean | null
+          seat_numbers?: string[] | null
+          status?: string | null
+          to_location?: string | null
           total_price?: number
+          user_email?: string | null
           user_id?: string
+          user_name?: string | null
         }
         Relationships: [
           {

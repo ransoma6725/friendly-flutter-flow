@@ -22,15 +22,50 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminBookings = () => {
-  const { bookings, confirmBookingPayment } = useBookings();
+  const { bookings, confirmBookingPayment, rejectBooking } = useBookings();
   const { toast } = useToast();
 
-  const handleConfirmPayment = (bookingId: string) => {
-    confirmBookingPayment(bookingId);
-    toast({
-      title: "Payment confirmed",
-      description: `Booking #${bookingId} has been marked as paid.`,
-    });
+  const handleConfirmPayment = async (bookingId: string) => {
+    try {
+      await confirmBookingPayment(bookingId);
+      toast({
+        title: "Payment confirmed",
+        description: `Booking #${bookingId} has been marked as paid.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to confirm payment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      await rejectBooking(bookingId);
+      toast({
+        title: "Booking rejected",
+        description: `Booking #${bookingId} has been rejected.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject booking",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusBadge = (booking: any) => {
+    if (booking.status === 'confirmed' || booking.paymentConfirmed) {
+      return <Badge className="bg-green-500">Confirmed</Badge>;
+    } else if (booking.status === 'rejected') {
+      return <Badge variant="destructive">Rejected</Badge>;
+    } else {
+      return <Badge variant="outline">Pending</Badge>;
+    }
   };
 
   return (
@@ -63,14 +98,17 @@ const AdminBookings = () => {
                     <TableHead>Seats</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bookings.map((booking) => (
                     <TableRow key={booking.id}>
-                      <TableCell className="font-medium">{booking.id}</TableCell>
-                      <TableCell>{booking.userName}</TableCell>
+                      <TableCell className="font-medium">{booking.id.slice(0, 8)}</TableCell>
+                      <TableCell>
+                        <div>{booking.userName}</div>
+                        <div className="text-sm text-muted-foreground">{booking.userEmail}</div>
+                      </TableCell>
                       <TableCell>
                         {booking.bus.from} → {booking.bus.to}
                       </TableCell>
@@ -84,26 +122,38 @@ const AdminBookings = () => {
                         {booking.totalAmount.toLocaleString()} XAF
                       </TableCell>
                       <TableCell>
-                        {booking.paymentConfirmed ? (
-                          <Badge className="bg-green-500">Confirmed</Badge>
-                        ) : (
-                          <Badge variant="outline">Pending</Badge>
-                        )}
+                        {getStatusBadge(booking)}
                       </TableCell>
                       <TableCell>
-                        {!booking.paymentConfirmed && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleConfirmPayment(booking.id)}
-                          >
-                            Confirm Payment
-                          </Button>
-                        )}
-                        {booking.paymentConfirmed && (
-                          <span className="text-green-600 text-sm">
-                            Payment verified
-                          </span>
-                        )}
+                        <div className="flex gap-2">
+                          {booking.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleConfirmPayment(booking.id)}
+                              >
+                                Confirm
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectBooking(booking.id)}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {booking.status === 'confirmed' && (
+                            <span className="text-green-600 text-sm">
+                              Payment verified
+                            </span>
+                          )}
+                          {booking.status === 'rejected' && (
+                            <span className="text-red-600 text-sm">
+                              Booking rejected
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

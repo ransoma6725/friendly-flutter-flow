@@ -1,9 +1,15 @@
 
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, CopyIcon, CheckIcon } from "lucide-react";
-import { Bus } from "@/types";
 import { useState } from "react";
-import { toast } from "@/components/ui/toast-utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Bus } from "@/types";
+import { CreditCard, ArrowLeft } from "lucide-react";
+import { useBookings } from "@/contexts/BookingContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PaymentDetailsProps {
   bus: Bus;
@@ -13,164 +19,167 @@ interface PaymentDetailsProps {
 }
 
 const PaymentDetails = ({ bus, selectedSeatIds, onPayment, onBack }: PaymentDetailsProps) => {
-  const [paymentMethod, setPaymentMethod] = useState<"mtn" | "orange">("mtn");
-  const [copied, setCopied] = useState<string | null>(null);
-  
-  const mtnNumber = "673371017";
-  const orangeNumber = "659942442";
-  
-  const handleCopyNumber = (number: string, type: string) => {
-    navigator.clipboard.writeText(number);
-    setCopied(type);
-    toast({
-      title: "Number copied!",
-      description: `${type} number copied to clipboard.`,
-    });
-    
-    setTimeout(() => {
-      setCopied(null);
-    }, 2000);
-  };
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { addBooking } = useBookings();
+  const { toast } = useToast();
 
-  const getPaymentInstructions = () => {
-    if (paymentMethod === "mtn") {
-      return [
-        "Dial *126# on your phone",
-        "Select \"Send Money\"",
-        `Enter the number: ${mtnNumber}`,
-        `Enter amount: ${(selectedSeatIds.length * bus.price).toLocaleString()} XAF`,
-        "Enter your PIN to confirm",
-        "Click \"Complete Payment\" below once done"
-      ];
-    } else {
-      return [
-        "Dial #150# on your phone",
-        "Select \"Send Money\"",
-        `Enter the number: ${orangeNumber}`,
-        `Enter amount: ${(selectedSeatIds.length * bus.price).toLocaleString()} XAF`,
-        "Enter your PIN to confirm",
-        "Click \"Complete Payment\" below once done"
-      ];
+  const totalPrice = selectedSeatIds.length * bus.price;
+
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to complete your booking",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create booking in database
+      await addBooking({
+        userId: user.id,
+        userName: user.user_metadata?.name || user.email || 'Unknown User',
+        userEmail: user.email || '',
+        bus,
+        seatIds: selectedSeatIds,
+        totalAmount: totalPrice,
+        departureDate: new Date().toISOString().split('T')[0], // Today's date for demo
+      });
+
+      // Mark seats as booked in localStorage (for local seat management)
+      const currentBookedSeats = JSON.parse(localStorage.getItem(`bus_${bus.id}_booked_seats`) || '[]');
+      const updatedBookedSeats = [...currentBookedSeats, ...selectedSeatIds];
+      localStorage.setItem(`bus_${bus.id}_booked_seats`, JSON.stringify(updatedBookedSeats));
+
+      toast({
+        title: "Booking created successfully",
+        description: "Your booking has been submitted and is awaiting payment confirmation",
+      });
+
+      onPayment();
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast({
+        title: "Booking failed",
+        description: "There was an error creating your booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-3">Booking Summary</h3>
-        
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Bus:</span>
-            <span className="font-medium">{bus.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Route:</span>
-            <span className="font-medium">{bus.from} → {bus.to}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Departure:</span>
-            <span className="font-medium">{bus.departureTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Arrival:</span>
-            <span className="font-medium">{bus.arrivalTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Seats:</span>
-            <span className="font-medium">{selectedSeatIds.length}</span>
-          </div>
-          <div className="flex justify-between border-t pt-2 mt-2">
-            <span>Price per seat:</span>
-            <span className="font-medium">{bus.price.toLocaleString()} XAF</span>
-          </div>
-          <div className="flex justify-between font-bold">
-            <span>Total Amount:</span>
-            <span>{(selectedSeatIds.length * bus.price).toLocaleString()} XAF</span>
-          </div>
-        </div>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Seats
+        </Button>
+        <h2 className="text-2xl font-bold">Payment Details</h2>
       </div>
-      
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Payment Method</h3>
-        
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <label className={`flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors ${paymentMethod === "mtn" ? "border-primary bg-primary/5" : ""}`}>
-              <input 
-                type="radio" 
-                name="paymentMethod" 
-                checked={paymentMethod === "mtn"} 
-                onChange={() => setPaymentMethod("mtn")} 
-                className="mr-2" 
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Booking Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Booking Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Route:</span>
+              <span className="font-medium">{bus.from} → {bus.to}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Bus:</span>
+              <span className="font-medium">{bus.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Departure:</span>
+              <span className="font-medium">{bus.departureTime}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Arrival:</span>
+              <span className="font-medium">{bus.arrivalTime}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Selected Seats:</span>
+              <span className="font-medium">{selectedSeatIds.join(", ")}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total Amount:</span>
+              <span>{totalPrice.toLocaleString()} XAF</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Payment Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cardNumber">Card Number</Label>
+              <Input
+                id="cardNumber"
+                placeholder="1234 5678 9012 3456"
+                disabled={isProcessing}
               />
-              <span>MTN Mobile Money</span>
-            </label>
-          </div>
-          <div className="flex-1">
-            <label className={`flex items-center justify-center border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors ${paymentMethod === "orange" ? "border-primary bg-primary/5" : ""}`}>
-              <input 
-                type="radio" 
-                name="paymentMethod" 
-                checked={paymentMethod === "orange"} 
-                onChange={() => setPaymentMethod("orange")} 
-                className="mr-2" 
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Expiry Date</Label>
+                <Input
+                  id="expiry"
+                  placeholder="MM/YY"
+                  disabled={isProcessing}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cvv">CVV</Label>
+                <Input
+                  id="cvv"
+                  placeholder="123"
+                  disabled={isProcessing}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cardName">Cardholder Name</Label>
+              <Input
+                id="cardName"
+                placeholder="John Doe"
+                disabled={isProcessing}
               />
-              <span>Orange Money</span>
-            </label>
-          </div>
-        </div>
-        
-        <div className="p-4 border rounded-md bg-muted/30">
-          <h4 className="font-medium mb-2">
-            {paymentMethod === "mtn" ? "MTN MoMo Payment Instructions" : "Orange Money Payment Instructions"}
-          </h4>
-          
-          <ol className="list-decimal list-inside space-y-2 text-sm">
-            {getPaymentInstructions().map((instruction, index) => (
-              <li key={index}>
-                {index === 2 ? (
-                  <>
-                    Enter the number: 
-                    <span className="ml-1 font-medium">
-                      {paymentMethod === "mtn" ? mtnNumber : orangeNumber}
-                      <button 
-                        onClick={() => handleCopyNumber(
-                          paymentMethod === "mtn" ? mtnNumber : orangeNumber,
-                          paymentMethod === "mtn" ? "MTN" : "Orange"
-                        )}
-                        className="ml-2 inline-flex items-center text-primary hover:text-primary/80"
-                      >
-                        {copied === (paymentMethod === "mtn" ? "MTN" : "Orange") ? (
-                          <CheckIcon className="h-4 w-4" />
-                        ) : (
-                          <CopyIcon className="h-4 w-4" />
-                        )}
-                      </button>
-                    </span>
-                  </>
-                ) : (
-                  instruction
-                )}
-              </li>
-            ))}
-          </ol>
-        </div>
-        
-        <Button 
-          onClick={onPayment} 
-          className="w-full"
-        >
-          Complete Payment
-        </Button>
-        
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="w-full gap-1"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Seat Selection
-        </Button>
+            </div>
+            
+            <Separator className="my-6" />
+            
+            <Button 
+              className="w-full" 
+              onClick={handlePayment}
+              disabled={isProcessing}
+              size="lg"
+            >
+              {isProcessing ? "Processing..." : `Pay ${totalPrice.toLocaleString()} XAF`}
+            </Button>
+            
+            <p className="text-sm text-muted-foreground text-center">
+              Your payment will be processed securely. You will receive a confirmation email once the payment is verified by our team.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
