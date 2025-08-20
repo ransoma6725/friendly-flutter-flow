@@ -71,7 +71,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         paymentConfirmed: booking.payment_confirmed || booking.status === 'confirmed',
         bookingDate: booking.booking_date,
         departureDate: booking.departure_date,
-        status: booking.status || 'pending'
+        status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'rejected'
       }));
 
       setBookings(transformedBookings);
