@@ -221,6 +221,10 @@ export type Database = {
           email: string
         }[]
       }
+      create_admin_user: {
+        Args: { admin_email: string; admin_password: string }
+        Returns: string
+      }
       hash_password: {
         Args: { raw_password: string }
         Returns: string

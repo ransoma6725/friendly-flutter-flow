@@ -43,53 +43,40 @@ const AdminRegister = () => {
     try {
       console.log("Creating admin account with email:", email);
       
-      // Check if admin already exists
-      const { data: existingAdmin, error: checkError } = await supabase
-        .from('admin_users')
-        .select('email')
-        .eq('email', email);
-
-      if (checkError) {
-        console.error("Error checking existing admin:", checkError);
-        throw new Error('Database error occurred. Please try again.');
-      }
-
-      if (existingAdmin && existingAdmin.length > 0) {
-        throw new Error('An admin account with this email already exists.');
-      }
-
-      // Create new admin user with a generated UUID
-      const adminId = crypto.randomUUID();
+      // Use the secure create_admin_user function
       const { data, error } = await supabase
-        .from('admin_users')
-        .insert([
-          {
-            id: adminId,
-            email: email,
-            password: password,
-          }
-        ])
-        .select();
+        .rpc('create_admin_user', {
+          admin_email: email,
+          admin_password: password
+        });
 
       console.log("Admin creation result:", { data, error });
 
       if (error) {
         console.error("Admin creation error:", error);
-        throw new Error(`Failed to create admin account: ${error.message}`);
+        
+        // Handle specific error cases
+        if (error.code === '23505') {
+          throw new Error('An admin account with this email already exists.');
+        } else {
+          throw new Error(`Failed to create admin account: ${error.message}`);
+        }
       }
 
-      toast({
-        title: "Success",
-        description: "Admin account created successfully!",
-      });
+      if (data) {
+        toast({
+          title: "Success",
+          description: "Admin account created successfully!",
+        });
 
-      // Clear form
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
 
-      // Redirect to admin login
-      navigate("/admin/login");
+        // Redirect to admin login
+        navigate("/admin/login");
+      }
       
     } catch (error: any) {
       console.error("Admin registration error:", error);
