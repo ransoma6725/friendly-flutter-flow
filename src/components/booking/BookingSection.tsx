@@ -1,10 +1,11 @@
 
-import { buses } from "@/services/mockData";
+import { useBusManagement } from "@/hooks/useBusManagement";
 import BusList from "@/components/BusList";
 import SeatSelection from "@/components/SeatSelection";
 import PaymentDetails from "@/components/PaymentDetails";
 import BookingConfirmation from "@/components/BookingConfirmation";
 import BookingSteps from "@/components/booking/BookingSteps";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Bus } from "@/types";
 import { AppState } from "@/utils/stepHelpers";
@@ -42,6 +43,7 @@ const BookingSection = ({
   onSignOut,
   setStep,
 }: BookingSectionProps) => {
+  const { buses, isLoading: busesLoading } = useBusManagement();
   
   const handleStepClick = (targetStep: AppState) => {
     // Only allow navigation to previous steps or next enabled step
@@ -65,7 +67,13 @@ const BookingSection = ({
       selectedSeatIds={selectedSeatIds}
     >
       {step === "buses" && (
-        <BusList buses={buses} onSelectBus={onSelectBus} />
+        busesLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <BusList buses={buses} onSelectBus={onSelectBus} />
+        )
       )}
       
       {step === "seats" && selectedBus && (
