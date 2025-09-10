@@ -17,14 +17,14 @@ export const getSeatDisplayClasses = (seat: Seat): string => {
   `;
 
   if (seat.isBooked) {
-    return `${baseClasses} bg-gray-400 text-gray-100 cursor-not-allowed opacity-70`;
+    return `${baseClasses} bg-muted text-muted-foreground cursor-not-allowed opacity-70`;
   }
   
   if (seat.isSelected) {
     return `${baseClasses} bg-primary text-primary-foreground shadow-md`;
   }
   
-  return `${baseClasses} bg-white border border-gray-300 hover:border-primary hover:shadow-sm`;
+  return `${baseClasses} bg-background border border-border hover:border-primary hover:shadow-sm`;
 };
 
 export const formatSelectedSeats = (seats: Seat[]): string => {
